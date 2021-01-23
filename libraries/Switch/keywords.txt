@@ -1,0 +1,58 @@
+#######################################
+# Syntax Coloring Map SD
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+Switch	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+begin	KEYWORD2
+update	KEYWORD2
+addMenu	KEYWORD2
+set	KEYWORD2
+get	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+Output1	LITERAL1
+Output2	LITERAL1
+Input1	LITERAL1
+Input2	LITERAL1
+InputI2C	LITERAL1
+InputI2CNoGain	LITERAL1
+Keypad	LITERAL1
+Frequency1	LITERAL1
+Counter2	LITERAL1
+Frequency2	LITERAL1
+Philips1	LITERAL1
+Philips2	LITERAL1
+Honeywell1	LITERAL1
+Honeywell2	LITERAL1
+RTC	LITERAL1
+LeftShort	LITERAL1
+CenterShort	LITERAL1
+RightShort	LITERAL1
+LeftLong	LITERAL1
+CenterLong	LITERAL1
+RightLong	LITERAL1
+DisplayFormat	LITERAL1
+Display	LITERAL1
+Unit	LITERAL1
+Deci	LITERAL1
+Centi	LITERAL1
+Milli	LITERAL1
+Bool	LITERAL1
+TwoDigit	LITERAL1
+Time	LITERAL1
+Flash	LITERAL1
+NoFlash	LITERAL1
+pwm_On	LITERAL1
+pwm_Off	LITERAL1
+ReadOnly	LITERAL1
+ReadWrite	LITERAL1
+
