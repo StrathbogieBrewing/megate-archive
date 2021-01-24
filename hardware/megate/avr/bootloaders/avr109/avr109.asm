@@ -1,9 +1,10 @@
 #include 	<avr/io.h>
 
-//; this bootloader is compatible with avrdude and avrprog.
-//; it is broadly based on the avr 109 format
-//; first program the micro with this code in ISP mode
-//; rc oscillator calibrated to 8 MHz from 32.768 KHz external crystal
+; this bootloader is compatible with avrdude and avrprog.
+; it is broadly based on the avr 109 format
+; first program the micro with this code in ISP mode
+; rc oscillator calibrated to 921.6 kHz from 32.768 KHz external crystal
+; baud rate 19200 bps
 
 #define		BOOTSTART 	0x0F00
 #define		ZERO		R4
@@ -17,8 +18,6 @@
 #define		TEMPL		R24
 #define		TEMPH		R25
 
-
-
 #define		PART_CODE	0x76
 #define		SW_MAJOR  	'2'
 #define		SW_MINOR  	'3'
@@ -30,22 +29,21 @@
 
 	.section .text
 
-startTestKey:
-; *** test if bootloader key pressed ***
-	; if key not pressed start application
-	sbis	_SFR_IO_ADDR(PINC), 3
+startTestExternalReset:
+; *** test if bootloader requested by external reset ***
+  in		TEMP, _SFR_IO_ADDR(MCUCSR)
+  sbrs	TEMP, EXTRF
+
 	rjmp	- (BOOTSTART << 1)
 
-	// set indicator to show in bootloader
-	sbi		_SFR_IO_ADDR(DDRD), 3
-	sbi		_SFR_IO_ADDR(PORTD), 3
+  ; clear the external reset flag
+  ldi   TEMP, ~(_BV(EXTRF))
+  out   _SFR_IO_ADDR(MCUCSR), TEMP
 
-	sbi		_SFR_IO_ADDR(DDRB), 5
-	// cbi		_SFR_IO_ADDR(PORTB), 5
 	rjmp	startBootloader
 
 
-// place strings in low and known area of flash to simplify indexing to single byte
+; place strings in low and known area of flash to simplify indexing to single byte
 programmerType:		.byte	'A', 'V', 'R', 'B', 'O', 'O', 'T', 0
 signatureBytes:		.byte	SIGNATURE_2, SIGNATURE_1, SIGNATURE_0, 0
 softwareVersion:	.byte 	SW_MAJOR, SW_MINOR, 0, 0
@@ -62,23 +60,23 @@ calibrateWaitStart:
 	andi	TEMPH, 0x07
 	breq	calibrateWaitStart
 
-	; loop is executed for 3 periods of external 32.768 kHz clock or 732.42 clock cycles @ 8.0 MHz
-	; count should be 732.42 / 5 = 146.5 counts, 2.5 cylcles average latency = 146 counts
+	; loop is executed for 31 periods of external 32.768 kHz clock or 871.875 clock cycles @ 921.6 kHz
+	; count should be 871.875 / 5 = 174.375 counts, 2.5 cylcles average latency = 174 counts
 calibrateTimerLoop:
 	in		TEMPH, _SFR_IO_ADDR(TCNT2)
 	inc		TEMPL
-	andi	TEMPH, 0x04
+	andi	TEMPH, 0x20
 	breq	calibrateTimerLoop
 	ldi		TEMPH, 0
 
-	; aim for target of 145 or 146 counts, average error is zero and allows for OSCCAL step size
+	; aim for target of 173 or 175 counts, average error is zero and allows for OSCCAL step size
 calibrateSlow:
-	cpi		TEMPL, 145
+	cpi		TEMPL, 173
 	brsh	calibrateFast
 	ldi		TEMPH, 1
 
 calibrateFast:
-	cpi		TEMPL, 147
+	cpi		TEMPL, 175
 	brlo	calibrateDone
 	ldi		TEMPH, -1
 
@@ -87,7 +85,6 @@ calibrateDone:
 	add		TEMPL, TEMPH
 	out     _SFR_IO_ADDR(OSCCAL), TEMPL
 	ret
-
 
 ; *** application boot entry point ***
 startBootloader:
@@ -104,11 +101,11 @@ startBootloader:
 
 ; *** calibrate rc clock routine ***
 	; set ASSR for async clock
-    ldi		TEMPH, (1 << AS2)
-    out		_SFR_IO_ADDR(ASSR), TEMPH
+  ldi		TEMPH, (1 << AS2)
+  out		_SFR_IO_ADDR(ASSR), TEMPH
 	; set timer 2 with no prescaling in CTC mode
-	ldi		TEMPH, (1 << CS20) 
-    out		_SFR_IO_ADDR(TCCR2), TEMPH
+	ldi		TEMPH, (1 << CS20)
+  out		_SFR_IO_ADDR(TCCR2), TEMPH
 
 calibrationLoop:
 	rcall	calibrate
@@ -118,20 +115,26 @@ calibrationLoop:
 ; *** initialise uart ***
 inituart:
 	; set baud rate to 19200 bps
-	ldi     TEMP, 25
+	ldi     TEMP, 2
 	out     _SFR_IO_ADDR(UBRRL), TEMP
 	; enable tx and rx
-	ldi     TEMP, ((1 << RXEN) | (1 << TXEN))       
+	ldi     TEMP, ((1 << RXEN) | (1 << TXEN))
 	out     _SFR_IO_ADDR(UCSRB), TEMP
 	rjmp	mainLoop
 
 ; *** send subroutine (value in TEMP) ***
 uartPut:
-	out     _SFR_IO_ADDR(UDR), TEMP
+  ; force half duplex to block any echo if connected to a bus
+  cbi		_SFR_IO_ADDR(UCSRB), RXEN		; disable rx
+
+	out    _SFR_IO_ADDR(UDR), TEMP
 uartTxLoop:
-	sbis    _SFR_IO_ADDR(UCSRA), TXC
-	rjmp	uartTxLoop
-	sbi     _SFR_IO_ADDR(UCSRA), TXC
+	sbis   _SFR_IO_ADDR(UCSRA), TXC
+	rjmp   uartTxLoop
+	sbi    _SFR_IO_ADDR(UCSRA), TXC
+
+  sbi		_SFR_IO_ADDR(UCSRB), RXEN		; enable rx
+
 	ret
 
 ; *** put string from progmem subroutine (LSB of address in R30) ***
@@ -178,9 +181,9 @@ blockSupport:
 
 readBlock:
 	cpi		RXCHAR, 'g'
-	brne	writeBlock		
-	rcall	uartGet	
-	ldi		TEMPH, 0			// limit buffer size to 256 characters		
+	brne	writeBlock
+	rcall	uartGet
+	ldi		TEMPH, 0			; limit buffer size to 256 characters
 	rcall	uartGet
 	mov		TEMPL, RXCHAR
 	rcall	uartGet
@@ -204,8 +207,8 @@ readFlashLoop:
 readEeprom:
 	sbic 	_SFR_IO_ADDR(EECR), EEWE
 	rjmp 	readEeprom
-	out 	EEARH, ADDRH
-	out 	EEARL, ADDRL
+	out 	_SFR_IO_ADDR(EEARH), ADDRH
+	out 	_SFR_IO_ADDR(EEARL), ADDRL
 	sbi 	_SFR_IO_ADDR(EECR), EERE
 	in 		TEMP, _SFR_IO_ADDR(EEDR)
 	rcall	uartPut
@@ -219,12 +222,12 @@ readDone:
 
 writeBlock:
 	cpi		RXCHAR, 'B'
-	breq	writeGetParams	
+	breq	writeGetParams
 	rjmp	autoIncrement
 
-writeGetParams:	
+writeGetParams:
 	rcall	uartGet
-	ldi		TEMPH, 0					// limit buffer size to 256 characters
+	ldi		TEMPH, 0					; limit buffer size to 256 characters
 	rcall	uartGet
 	mov		TEMPL, RXCHAR
 	rcall	uartGet
@@ -276,7 +279,7 @@ writeFlash:
 writeFlashLoop:
 	ld		R0, Y+
 	ld		R1, Y+
-	ldi 	TEMP, (1<<SPMEN)					// copy word to flash write buffer
+	ldi 	TEMP, (1<<SPMEN)					; copy word to flash write buffer
 	rcall	writeFlashSPM
 	adiw	ZL, 2
 	adiw	ADDRL, 1
@@ -289,10 +292,10 @@ writeFlashLoop:
 
 
 writeFlashSPM:
-	in 		STATUS, _SFR_IO_ADDR(SPMCR)			// check for previous SPM complete
+	in 		STATUS, _SFR_IO_ADDR(SPMCR)			; check for previous SPM complete
 	sbrc 	STATUS, SPMEN
-	rjmp 	writeFlashSPM	
-	out 	_SFR_IO_ADDR(SPMCR), TEMP			// execute spm with action given by TEMP
+	rjmp 	writeFlashSPM
+	out 	_SFR_IO_ADDR(SPMCR), TEMP			; execute spm with action given by TEMP
 	spm
 	ret
 
@@ -314,7 +317,7 @@ autoIncrement:
 autoIncrementSupported:
 	ldi		TEMP, 'Y'
 	rcall	uartPut
-	rjmp	mainLoop	
+	rjmp	mainLoop
 
 setAddress:
 	cpi		RXCHAR, 'A'
@@ -326,7 +329,7 @@ setAddress:
 	rjmp	uartPutReturnAndMainLoop
 
 eraseChip:
-	cpi		RXCHAR, 'e'							// dont do anything because we erase page by page
+	cpi		RXCHAR, 'e'							; dont do anything because we erase page by page
 	brne	exitBootloader
 	rjmp	uartPutReturnAndMainLoop
 
@@ -335,6 +338,7 @@ exitBootloader:
 	brne	getProgrammerType
 	ldi		TEMP, '\r'
 	rcall 	uartPut
+
 	cbi		_SFR_IO_ADDR(DDRB), 5
 	rjmp	- (BOOTSTART << 1)
 
@@ -423,9 +427,3 @@ syncCharacterDone:
 putZeroAndMainLoop:
 	ldi		TEMP, 0
 	rjmp	uartPutAndMainLoop
-
-
-
-
-
-
