@@ -35,7 +35,7 @@ OBJECTS = avr109.o
 all: $(TARGET) avr109.hex avr109.lss size
 
 ## Compile
-avr109.o: avr109.asm
+avr109.o: avr109.S
 	$(CC) $(INCLUDES) $(ASMFLAGS) -c  $<
 
 ##Link
