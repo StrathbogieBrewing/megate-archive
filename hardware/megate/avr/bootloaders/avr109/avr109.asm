@@ -4,7 +4,7 @@
 ; it is broadly based on the avr 109 format
 ; first program the micro with this code in ISP mode
 ; rc oscillator calibrated to 1 MHz from 32.768 KHz external crystal
-; baud rate 4800 bps
+; baud rate 9600 bps
 
 #define		BOOTSTART 	0x0F00
 #define		ZERO		R4
@@ -123,9 +123,12 @@ calibrationLoop:
 
 ; *** initialise uart ***
 inituart:
-	; set baud rate to 4800 bps
+	; set baud rate to 9600 bps
 	ldi     TEMP, 12
 	out     _SFR_IO_ADDR(UBRRL), TEMP
+  ; enable double speed
+  ldi     TEMP, (1 << U2X)
+  out     _SFR_IO_ADDR(UCSRA), TEMP
 	; enable tx and rx
 	ldi     TEMP, ((1 << RXEN) | (1 << TXEN))
 	out     _SFR_IO_ADDR(UCSRB), TEMP
@@ -184,8 +187,10 @@ blockSupport:
 	ldi		TEMP, 0
 	rcall	uartPut
 	ldi		TEMP, BUFFERSIZE
-	rcall	uartPut
-	rjmp	mainLoop
+
+	;rcall	uartPut
+	;rjmp	mainLoop
+  rjmp uartPutAndMainLoop
 
 
 readBlock:
@@ -325,8 +330,11 @@ autoIncrement:
 	brne	setAddress
 autoIncrementSupported:
 	ldi		TEMP, 'Y'
-	rcall	uartPut
-	rjmp	mainLoop
+
+
+	;rcall	uartPut
+	;rjmp	mainLoop
+  rjmp uartPutAndMainLoop
 
 setAddress:
 	cpi		RXCHAR, 'A'
@@ -355,8 +363,10 @@ getProgrammerType:
 	cpi		RXCHAR, 'p'
 	brne	reportSupportedDeviceCodes
 	ldi		TEMP, 'S'
-	rcall 	uartPut
-	rjmp	mainLoop
+
+	;rcall 	uartPut
+	;rjmp	mainLoop
+  rjmp uartPutAndMainLoop
 
 reportSupportedDeviceCodes:
 	cpi		RXCHAR, 't'
@@ -364,8 +374,10 @@ reportSupportedDeviceCodes:
 	ldi		TEMP, PART_CODE
 	rcall	uartPut
 	ldi		TEMP, 0x00
-	rcall	uartPut
-	rjmp	mainLoop
+
+	;rcall	uartPut
+	;rjmp	mainLoop
+  rjmp uartPutAndMainLoop
 
 setLED:
 	cpi		RXCHAR, 'x'
@@ -423,15 +435,18 @@ returnSignatureBytes:
 
 putString:
 	rcall	uartPutString
+syncCharacterDone:
 	rjmp	mainLoop
 
 syncCharacter:
 	cpi		RXCHAR, 0x1b
 	breq	syncCharacterDone
 	ldi		TEMP, '?'
-	rcall	uartPut
-syncCharacterDone:
-	rjmp	mainLoop
+
+;	rcall	uartPut
+;syncCharacterDone:
+;	rjmp	mainLoop
+  rjmp	uartPutAndMainLoop
 
 putZeroAndMainLoop:
 	ldi		TEMP, 0
