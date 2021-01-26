@@ -3,8 +3,8 @@
 ; this bootloader is compatible with avrdude and avrprog.
 ; it is broadly based on the avr 109 format
 ; first program the micro with this code in ISP mode
-; rc oscillator calibrated to 921.6 kHz from 32.768 KHz external crystal
-; baud rate 19200 bps
+; rc oscillator calibrated to 1 MHz from 32.768 KHz external crystal
+; baud rate 4800 bps
 
 #define		BOOTSTART 	0x0F00
 #define		ZERO		R4
@@ -54,29 +54,38 @@ calibrate:
 	andi	TEMPL, 0x07
 	brne	calibrate
 
-	; average latency of block is 5 cycles
+	; average latency of start loop is ((3 + 7) / 2) = 4.5 cpu cycles
 calibrateWaitStart:
-	in		TEMPH, _SFR_IO_ADDR(TCNT2)
-	andi	TEMPH, 0x07
-	breq	calibrateWaitStart
+	in		TEMPH, _SFR_IO_ADDR(TCNT2) ; 1 cycle
+	andi	TEMPH, 0x07                ; 1 cycle
+	breq	calibrateWaitStart         ; 1 cycle if no branch, 2 cycles if branch
 
-	; loop is executed for 31 periods of external 32.768 kHz clock or 871.875 clock cycles @ 921.6 kHz
+	; calibrateTimerLoop is executed for 31 periods of 32.768 kHz clock or 946 us
+  ; plus average latency of (4.5 + 2.5) = 7 cpu cycles at 1 us / cycle
+  ; total 946 + 7 = 951 us or 951 cpu cycles
+  ; 951 / 5 cycles in loop = 190 counts
+
+  ; 871.875 clock cycles @ 921.6 kHz
 	; count should be 871.875 / 5 = 174.375 counts, 2.5 cylcles average latency = 174 counts
+
+  ; average latency of stop loop is ((0 + 5) / 2) = 2.5 cpu cycles
 calibrateTimerLoop:
-	in		TEMPH, _SFR_IO_ADDR(TCNT2)
-	inc		TEMPL
-	andi	TEMPH, 0x20
-	breq	calibrateTimerLoop
+	in		TEMPH, _SFR_IO_ADDR(TCNT2) ; 1 cycle
+	inc		TEMPL                      ; 1 cycle
+	andi	TEMPH, 0x20                ; 1 cycle
+	breq	calibrateTimerLoop         ; 1 cycle if no branch, 2 cycles if branch
+
 	ldi		TEMPH, 0
 
-	; aim for target of 173 or 175 counts, average error is zero and allows for OSCCAL step size
+	; aim for target of between 189 and 191 counts
+  ; average error is zero and allows for OSCCAL step size
 calibrateSlow:
-	cpi		TEMPL, 173
+	cpi		TEMPL, 189
 	brsh	calibrateFast
 	ldi		TEMPH, 1
 
 calibrateFast:
-	cpi		TEMPL, 175
+	cpi		TEMPL, 192
 	brlo	calibrateDone
 	ldi		TEMPH, -1
 
@@ -114,8 +123,8 @@ calibrationLoop:
 
 ; *** initialise uart ***
 inituart:
-	; set baud rate to 19200 bps
-	ldi     TEMP, 2
+	; set baud rate to 4800 bps
+	ldi     TEMP, 12
 	out     _SFR_IO_ADDR(UBRRL), TEMP
 	; enable tx and rx
 	ldi     TEMP, ((1 << RXEN) | (1 << TXEN))

@@ -1,10 +1,10 @@
 megate.name=Megate
 
 megate.build.mcu=atmega8
-megate.build.f_cpu=921600L
+megate.build.f_cpu=1000000L
 megate.build.board=AVR_NG
-megate.build.core=megate
-megate.build.variant=standard
+megate.build.core=arduino:arduino
+megate.build.variant=arduino:standard
 
 megate.upload.maximum_size=7680
 megate.upload.maximum_data_size=1024
