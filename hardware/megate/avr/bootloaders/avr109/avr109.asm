@@ -4,7 +4,7 @@
 ; it is broadly based on the avr 109 format
 ; first program the micro with this code in ISP mode
 ; rc oscillator calibrated to 1 MHz from 32.768 KHz external crystal
-; baud rate 9600 bps
+; baud rate 9600 bps, full duplex or half duplex
 
 #define		BOOTSTART 	0x0F00
 #define		ZERO		R4
@@ -129,8 +129,6 @@ inituart:
 	out     _SFR_IO_ADDR(UBRRL), TEMP
   ; enable double speed
   sbi     _SFR_IO_ADDR(UCSRA), U2X
-  ;ldi     TEMP, (1 << U2X)
-  ;out     _SFR_IO_ADDR(UCSRA), TEMP
 	; enable tx and rx
 	ldi     TEMP, ((1 << RXEN) | (1 << TXEN))
 	out     _SFR_IO_ADDR(UCSRB), TEMP
@@ -140,15 +138,12 @@ inituart:
 uartPut:
   ; force half duplex to block any echo if connected to a bus
   cbi		_SFR_IO_ADDR(UCSRB), RXEN		; disable rx
-
 	out    _SFR_IO_ADDR(UDR), TEMP
 uartTxLoop:
 	sbis   _SFR_IO_ADDR(UCSRA), TXC
 	rjmp   uartTxLoop
 	sbi    _SFR_IO_ADDR(UCSRA), TXC
-
   sbi		_SFR_IO_ADDR(UCSRB), RXEN		; enable rx
-
 	ret
 
 ; *** put string from progmem subroutine (LSB of address in R30) ***
@@ -189,11 +184,7 @@ blockSupport:
 	ldi		TEMP, 0
 	rcall	uartPut
 	ldi		TEMP, BUFFERSIZE
-
-	;rcall	uartPut
-	;rjmp	mainLoop
   rjmp uartPutAndMainLoop
-
 
 readBlock:
 	cpi		RXCHAR, 'g'
@@ -235,7 +226,6 @@ readEeprom:
 readDone:
 	rjmp	mainLoop
 
-
 writeBlock:
 	cpi		RXCHAR, 'B'
 	breq	writeGetParams
@@ -263,7 +253,6 @@ writeGetData:
 	cpi		STATUS, 'E'
 	brne	writeFlash
 
-
 writeEeprom:
 	ld		TEMP, Y+
 writeEepromWait:
@@ -277,7 +266,6 @@ writeEepromWait:
 	adiw	ADDRL, 1
 	sbiw	TEMPL, 1
 	brne	writeEeprom
-
 
 writeFlash:
 	sbic 	_SFR_IO_ADDR(EECR), EEWE
@@ -306,7 +294,6 @@ writeFlashLoop:
 	rcall	writeFlashPage
 	rjmp	uartPutReturnAndMainLoop
 
-
 writeFlashSPM:
 	in 		STATUS, _SFR_IO_ADDR(SPMCR)			; check for previous SPM complete
 	sbrc 	STATUS, SPMEN
@@ -314,7 +301,6 @@ writeFlashSPM:
 	out 	_SFR_IO_ADDR(SPMCR), TEMP			; execute spm with action given by TEMP
 	spm
 	ret
-
 
 writeFlashPage:
 	cpi		ZH, hi8(BOOTSTART << 1)
@@ -326,16 +312,11 @@ writeFlashPage:
 writeBootLoaderInhibit:
 	ret
 
-
 autoIncrement:
 	cpi		RXCHAR, 'a'
 	brne	setAddress
 autoIncrementSupported:
 	ldi		TEMP, 'Y'
-
-
-	;rcall	uartPut
-	;rjmp	mainLoop
   rjmp uartPutAndMainLoop
 
 setAddress:
@@ -357,22 +338,15 @@ exitBootloader:
 	brne	getProgrammerType
 	ldi		TEMP, '\r'
 	rcall 	uartPut
-
-  ; force watchdog reset
-  ldi   TEMP, (1 << WDE)
+  ldi   TEMP, (1 << WDE)  ; force watchdog reset
   out   _SFR_IO_ADDR(WDTCR), TEMP
 infiniteLoop:
   rjmp  infiniteLoop
-	;cbi		_SFR_IO_ADDR(DDRB), 5
-	;rjmp	- (BOOTSTART << 1)
 
 getProgrammerType:
 	cpi		RXCHAR, 'p'
 	brne	reportSupportedDeviceCodes
 	ldi		TEMP, 'S'
-
-	;rcall 	uartPut
-	;rjmp	mainLoop
   rjmp uartPutAndMainLoop
 
 reportSupportedDeviceCodes:
@@ -381,9 +355,6 @@ reportSupportedDeviceCodes:
 	ldi		TEMP, PART_CODE
 	rcall	uartPut
 	ldi		TEMP, 0x00
-
-	;rcall	uartPut
-	;rjmp	mainLoop
   rjmp uartPutAndMainLoop
 
 setLED:
@@ -449,10 +420,6 @@ syncCharacter:
 	cpi		RXCHAR, 0x1b
 	breq	syncCharacterDone
 	ldi		TEMP, '?'
-
-;	rcall	uartPut
-;syncCharacterDone:
-;	rjmp	mainLoop
   rjmp	uartPutAndMainLoop
 
 putZeroAndMainLoop:
