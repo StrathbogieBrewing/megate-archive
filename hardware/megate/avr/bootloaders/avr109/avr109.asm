@@ -34,6 +34,7 @@ startTestExternalReset:
   in		TEMP, _SFR_IO_ADDR(MCUCSR)
   sbrs	TEMP, EXTRF
 
+  ; jump to application code
 	rjmp	- (BOOTSTART << 1)
 
   ; clear the external reset flag
@@ -127,8 +128,9 @@ inituart:
 	ldi     TEMP, 12
 	out     _SFR_IO_ADDR(UBRRL), TEMP
   ; enable double speed
-  ldi     TEMP, (1 << U2X)
-  out     _SFR_IO_ADDR(UCSRA), TEMP
+  sbi     _SFR_IO_ADDR(UCSRA), U2X
+  ;ldi     TEMP, (1 << U2X)
+  ;out     _SFR_IO_ADDR(UCSRA), TEMP
 	; enable tx and rx
 	ldi     TEMP, ((1 << RXEN) | (1 << TXEN))
 	out     _SFR_IO_ADDR(UCSRB), TEMP
@@ -163,7 +165,7 @@ uartPutStringExit:
 ; *** receive subroutine (value returned in RXCHAR) ***
 uartGet:
 	sbis    _SFR_IO_ADDR(UCSRA), RXC
-	rjmp	uartGet
+	rjmp	  uartGet
 	in      RXCHAR, _SFR_IO_ADDR(UDR)
 	ret
 
@@ -356,8 +358,13 @@ exitBootloader:
 	ldi		TEMP, '\r'
 	rcall 	uartPut
 
-	cbi		_SFR_IO_ADDR(DDRB), 5
-	rjmp	- (BOOTSTART << 1)
+  ; force watchdog reset
+  ldi   TEMP, (1 << WDE)
+  out   _SFR_IO_ADDR(WDTCR), TEMP
+infiniteLoop:
+  rjmp  infiniteLoop
+	;cbi		_SFR_IO_ADDR(DDRB), 5
+	;rjmp	- (BOOTSTART << 1)
 
 getProgrammerType:
 	cpi		RXCHAR, 'p'

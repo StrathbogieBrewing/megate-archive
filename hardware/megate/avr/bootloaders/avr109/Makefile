@@ -8,8 +8,6 @@ MCU = atmega8
 TARGET = avr109.elf
 
 CC = avr-gcc
-# CPP = avr-g++
-
 
 ## Options common to compile, link and assembly rules
 COMMON = -mmcu=$(MCU)
@@ -30,15 +28,6 @@ LDFLAGS = $(COMMON)
 LDFLAGS += -nodefaultlibs -nostartfiles  -Wl,--section-start=.text=0x1E00 -Wl,-Map=avr109.map
 
 
-## Intel Hex file production flags
-HEX_FLASH_FLAGS =
-# -R .eeprom -R .fuse -R .lock -R .signature
-#
-# HEX_EEPROM_FLAGS = -j .eeprom
-# HEX_EEPROM_FLAGS += --set-section-flags=.eeprom="alloc,load"
-# HEX_EEPROM_FLAGS += --change-section-lma .eeprom=0 --no-change-warnings
-
-
 ## Objects that must be built in order to link
 OBJECTS = avr109.o
 
@@ -54,10 +43,7 @@ $(TARGET): $(OBJECTS)
 	 $(CC) $(LDFLAGS) $(OBJECTS)  $(LIBDIRS) $(LIBS) -o $(TARGET)
 
 %.hex: $(TARGET)
-	avr-objcopy -O ihex $(HEX_FLASH_FLAGS)  $< $@
-
-# %.eep: $(TARGET)
-# 	-avr-objcopy $(HEX_EEPROM_FLAGS) -O ihex $< $@ || exit 0
+	avr-objcopy -O ihex $< $@
 
 %.lss: $(TARGET)
 	avr-objdump -h -S $< > $@
@@ -77,10 +63,9 @@ LFUSE = 0xE1
 # change HFUSE for 512 bytes of boot memory and move reset vector to boot memory
 HFUSE = 0xDC
 
-## AVRDude Programming
+## AVRDude Programming Bootloader
 program: avr109.hex
-	avrdude -C ../avrdude.conf -c dragon_isp -p m8 -P usb -e -U flash:w:avr109.hex -U lfuse:w:$(LFUSE):m -U hfuse:w:$(HFUSE):m
-	sleep 2
-	# avrdude -C ../avrdude.conf -c dragon_isp -p m8 -P usb -U hfuse:w:0x44:m
+	avrdude -C avrdude.conf -c stk500v2 -P usb -p m8 -e -U flash:w:avr109.hex -U lfuse:w:$(LFUSE):m -U hfuse:w:$(HFUSE):m
 
-# avrdude -c avr109 -p m8 -P /dev/ttyUSB1 -C ../avrdude.conf -b 19200 -U eeprom:r:read.hex:i
+# read data from eeprom using bootloader
+# avrdude -c avr109 -p m8 -P /dev/ttyUSB0 -C avrdude.conf -b 9600 -U eeprom:r:read.hex:i
