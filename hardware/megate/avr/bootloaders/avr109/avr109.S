@@ -66,9 +66,6 @@ calibrateWaitStart:
   ; total 946 + 7 = 951 us or 951 cpu cycles
   ; 951 / 5 cycles in loop = 190 counts
 
-  ; 871.875 clock cycles @ 921.6 kHz
-	; count should be 871.875 / 5 = 174.375 counts, 2.5 cylcles average latency = 174 counts
-
   ; average latency of stop loop is ((0 + 5) / 2) = 2.5 cpu cycles
 calibrateTimerLoop:
 	in		TEMPH, _SFR_IO_ADDR(TCNT2) ; 1 cycle
