@@ -10,7 +10,7 @@ extern volatile unsigned int rtc_minutes;
 extern volatile unsigned char rtc_days;
 extern volatile unsigned int rtc_cal;
 
-void rtc_sleep(void);
+bool rtc_sleep(void);
 
 #ifdef __cplusplus
 } // extern "C"
