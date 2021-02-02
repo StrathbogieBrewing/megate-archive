@@ -4,16 +4,17 @@
 
 #include "cal.h"
 
+#define rtc_kTarget (122)
 #define rtc_kStayAwakeSeconds (10)
 
 // overflow at 1 Hz (prescale 128)
-#define rtc_kSetTCCR2  ((1 << CS22) | (1 << CS20))
+#define rtc_kSetTCCR2 ((1 << CS22) | (1 << CS20))
 
 volatile unsigned char rtc_seconds;
 volatile unsigned int rtc_minutes;
 volatile unsigned char rtc_days;
 volatile unsigned char rtc_awakeTimer;
-volatile unsigned int rtc_cal;
+volatile unsigned char rtc_cal;
 
 // static volatile bool timer2overflow;
 static volatile bool rtc_sleeping = false;
@@ -21,24 +22,7 @@ static volatile bool rtc_sleeping = false;
 extern volatile unsigned long timer0_overflow_count;
 
 ISR(TIMER2_OVF_vect) {
-  static unsigned int old_t = 0;
-
-  // update rc calibration timer
-  unsigned int new_t =
-        ((unsigned int)timer0_overflow_count << 8) + (unsigned int)TCNT0;
-  // update awake timer
-  if(rtc_awakeTimer < rtc_kStayAwakeSeconds)
-    rtc_awakeTimer++;
-  // calibrate if device awake more than 1 second
-  if (rtc_awakeTimer > 1) {
-    rtc_cal = new_t - old_t;
-    // calibrate rc oscillator to 1 MHz
-    if (rtc_cal > 15700)
-      OSCCAL--;
-    if (rtc_cal < 15550)
-      OSCCAL++;
-  }
-  old_t = new_t;
+  static unsigned char old_t = 0;
 
   // update real time clock
   if (++rtc_seconds >= 60) {
@@ -47,6 +31,27 @@ ISR(TIMER2_OVF_vect) {
       rtc_minutes = 0;
       rtc_days++;
     }
+  }
+
+  // update awake timer
+  if (rtc_awakeTimer < rtc_kStayAwakeSeconds)
+    rtc_awakeTimer++;
+
+  // update rc calibration timer every 2 seconds
+  if (rtc_seconds & 0x01) {
+    unsigned char new_t = *((unsigned char*)(&timer0_overflow_count));
+    // (unsigned char)timer0_overflow_count;
+
+    // calibrate if device awake for more than 2 seconds
+    if (rtc_awakeTimer > 2) {
+      rtc_cal = new_t - old_t;
+      // calibrate rc oscillator to 1 MHz - target is 15625
+      if (rtc_cal > rtc_kTarget)
+        OSCCAL--;
+      if (rtc_cal < rtc_kTarget)
+        OSCCAL++;
+    }
+    old_t = new_t;
   }
 }
 
@@ -59,39 +64,23 @@ ISR(INT0_vect) {
 
 bool rtc_sleep(void) {
 
-      GICR |= (1 << INT0); // enable INT0, active low
-      // timer2overflow = false;
-      sleep_mode();          // Enter sleep mode.
-      GICR &= ~(1 << INT0);  // disable INT0
-      TCCR2 = rtc_kSetTCCR2; // Write dummy value to control register
-      while (ASSR & ((1 << TCN2UB) | (1 << OCR2UB) | (1 << TCR2UB)))
-        ;
+  GICR |= (1 << INT0); // enable INT0, active low
+  // timer2overflow = false;
+  sleep_mode();          // Enter sleep mode.
+  GICR &= ~(1 << INT0);  // disable INT0
+  TCCR2 = rtc_kSetTCCR2; // Write dummy value to control register
+  while (ASSR & ((1 << TCN2UB) | (1 << OCR2UB) | (1 << TCR2UB)))
+    ;
 
-      rtc_awakeTimer = 0;
-      // if rx signal triggered wake up reset the stay awake timer
-      // if (timer2overflow == false)
-      //   rtc_stayAwakeTimer = rtc_kStayAwakeSeconds;
-      //
-      return true;
+  rtc_awakeTimer = 0;
+  // if rx signal triggered wake up reset the stay awake timer
+  // if (timer2overflow == false)
+  //   rtc_stayAwakeTimer = rtc_kStayAwakeSeconds;
+  //
+  return true;
 
-    // return false;
-  }
-//   if (rtc_stayAwakeTimer == 0) {
-//     GICR |= (1 << INT0); // enable INT0, active low
-//     timer2overflow = false;
-//     sleep_mode();          // Enter sleep mode.
-//     GICR &= ~(1 << INT0);  // disable INT0
-//     TCCR2 = rtc_kSetTCCR2; // Write dummy value to control register
-//     while (ASSR & ((1 << TCN2UB) | (1 << OCR2UB) | (1 << TCR2UB)))
-//       ;
-//     // if rx signal triggered wake up reset the stay awake timer
-//     if (timer2overflow == false)
-//       rtc_stayAwakeTimer = rtc_kStayAwakeSeconds;
-//
-//     return true;
-//   }
-//   return false;
-// }
+  // return false;
+}
 
 void initVariant() {
   // fast rc calibration routine

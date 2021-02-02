@@ -8,7 +8,7 @@ extern "C" {
 extern volatile unsigned char rtc_seconds;
 extern volatile unsigned int rtc_minutes;
 extern volatile unsigned char rtc_days;
-extern volatile unsigned int rtc_cal;
+extern volatile unsigned char rtc_cal;
 
 bool rtc_sleep(void);
 
