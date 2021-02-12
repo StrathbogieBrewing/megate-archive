@@ -1,8 +1,8 @@
 #include 	<avr/io.h>
 
 #define rtc_kTarget (488)
-#define rtc_kTargetLow (rtc_kTarget - rtc_kTarget / 100)
-#define rtc_kTargetHigh (rtc_kTarget + rtc_kTarget / 100)
+#define rtc_kTargetLow (rtc_kTarget - 5)
+#define rtc_kTargetHigh (rtc_kTarget + 5)
 
 	.align	1
 	.lcomm 	rtc_seconds, 	1
@@ -32,14 +32,23 @@ rtc_init:
 	; set timer 2 with 128 prescaling for 256 Hz clock (1 Hz overflow)
 	ldi		R22, (1 << CS22) | (1 << CS20)
   out		_SFR_IO_ADDR(TCCR2), R22
-waitASSR:
-	in		R22, _SFR_IO_ADDR(ASSR)
-	andi  R22, ((1 << TCN2UB) | (1 << OCR2UB) | (1 << TCR2UB))
-	brne  waitASSR
+; waitASSR:
+; 	in		R22, _SFR_IO_ADDR(ASSR)
+; 	andi  R22, ((1 << TCN2UB) | (1 << OCR2UB) | (1 << TCR2UB))
+; 	brne  waitASSR
 
-	; initial OSCCAL calibration
+	; initial quick OSCCAL calibration
+waitCalibrate:
+	rcall rtc_calibrate
+	sbrs	R25, 7
+	rjmp  waitCalibrate
 
-
+	; initialise clock to 10:00:00
+	ldi   R22, 10
+	sts   rtc_seconds, R1
+	sts   rtc_minutes, R1
+	sts   rtc_hours, R22
+	sts   rtc_days, R1
 
 	; enable timer overflow interrupt
 	in		R22, _SFR_IO_ADDR(TIMSK)
@@ -98,12 +107,13 @@ calibrateLoop:
 	cpc		R25, R23
 	brsh  decreaseOSCCAL
 
+leaveOSCCAL:
+	; if we are in range return the count as a negative - easier to test
 	movw  R24, R22
 	clr   R24
 	clr   R25
 	sub   R24, R22
 	sbc   R25, R23
-
 	ret
 
 increaseOSCCAL:

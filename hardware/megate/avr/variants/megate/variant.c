@@ -1,9 +1,56 @@
 #include "Arduino.h"
 
 #include <avr/sleep.h>
-#include <limits.h>
+// #include <limits.h>
 
 #include "rtc.h"
+
+#define rtc_kSetTCCR2 ((1 << CS22) | (1 << CS20))
+
+bool rtc_sleep(void) {
+  GICR |= (1 << INT0);    // enable INT0, active low
+  ADCSRA &= ~(1 << ADEN); // disable adc to save power
+  // ACSR |= (1 << ACD);     // disable comparator
+  unsigned char seconds = rtc_seconds;
+  sleep_mode();         // Enter sleep mode.
+  GICR &= ~(1 << INT0); // disable INT0
+  ADCSRA |= (1 << ADEN);
+  // TCCR2 = rtc_kSetTCCR2; // Write dummy value to control register
+  // while (ASSR & ((1 << TCN2UB) | (1 << OCR2UB) | (1 << TCR2UB))) {
+  // }
+
+  // test if it was a timer wake up or external interrupt
+  if (seconds == rtc_seconds)
+    return true;
+  else
+    return false;
+}
+
+ISR(INT0_vect) {
+  GICR &= ~(1 << INT0); // disable INT0
+}
+
+void initVariant() {
+  rtc_init();
+  set_sleep_mode(SLEEP_MODE_PWR_SAVE);
+  sleep_enable(); // Enabling sleep mode
+}
+
+// rtc_seconds = 0;
+// rtc_minutes = 60 * 10; // start at 10 am from boot
+// rtc_days = 0;
+// secondsAwake = 0;
+//
+// ASSR |= (1 << AS2);    // enable asynchronous clock
+// TCNT2 = 0;             // reset counter / timer 2
+// TCCR2 = rtc_kSetTCCR2; // initialise prescaler for 1 Hz overflow
+// while (ASSR & ((1 << TCN2UB) | (1 << OCR2UB) | (1 << TCR2UB))) {
+// }
+// TIMSK |= (1 << TOIE2); // Set 8-bit Timer/Counter2 Overflow Interrupt Enable
+// sei();
+//
+// set_sleep_mode(SLEEP_MODE_PWR_SAVE);
+// sleep_enable(); // Enabling sleep mode
 
 // #define rtc_kTarget (122)
 //
@@ -63,51 +110,3 @@
 //     old_t = new_t;
 //   }
 // }
-
-// ISR(INT0_vect) {
-//   // external interrupt 0 is tied to uart rx pin
-//   // if uart rx pin is active then trigger wake up
-//   rtc_secondsSinceReceive = 0;
-// }
-
-// void rtc_sleep(void) {
-//   GICR |= (1 << INT0); // enable INT0, active low
-//   timerOverflowFlag = false;
-//   sleep_mode();          // Enter sleep mode.
-//   GICR &= ~(1 << INT0);  // disable INT0
-//   TCCR2 = rtc_kSetTCCR2; // Write dummy value to control register
-//   while (ASSR & ((1 << TCN2UB) | (1 << OCR2UB) | (1 << TCR2UB))) {
-//   }
-//   secondsAwake = 0;
-//   if (timerOverflowFlag == false)
-//     rtc_secondsSinceReceive = 0;
-// }
-
-// unsigned int rtc_calibrate(void){
-//   return cal_init();
-// }
-
-void initVariant() {
-
-  rtc_init();
-
-  return;
-  // fast rc osc calibration routine
-  // cal_init();
-  //
-  // rtc_seconds = 0;
-  // rtc_minutes = 60 * 10; // start at 10 am from boot
-  // rtc_days = 0;
-  // secondsAwake = 0;
-  //
-  // ASSR |= (1 << AS2);    // enable asynchronous clock
-  // TCNT2 = 0;             // reset counter / timer 2
-  // TCCR2 = rtc_kSetTCCR2; // initialise prescaler for 1 Hz overflow
-  // while (ASSR & ((1 << TCN2UB) | (1 << OCR2UB) | (1 << TCR2UB))) {
-  // }
-  // TIMSK |= (1 << TOIE2); // Set 8-bit Timer/Counter2 Overflow Interrupt Enable
-  // sei();
-  //
-  // set_sleep_mode(SLEEP_MODE_PWR_SAVE);
-  // sleep_enable(); // Enabling sleep mode
-}

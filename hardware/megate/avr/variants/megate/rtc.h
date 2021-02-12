@@ -13,6 +13,8 @@ extern volatile unsigned char rtc_days;
 void rtc_init(void);
 int rtc_calibrate(void);
 
+bool rtc_sleep(void);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
