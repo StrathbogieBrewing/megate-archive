@@ -1,34 +1,8 @@
 #include "Arduino.h"
 
 #include <avr/sleep.h>
-// #include <limits.h>
 
 #include "rtc.h"
-
-#define rtc_kSetTCCR2 ((1 << CS22) | (1 << CS20))
-
-bool rtc_sleep(void) {
-  GICR |= (1 << INT0);    // enable INT0, active low
-  ADCSRA &= ~(1 << ADEN); // disable adc to save power
-  // ACSR |= (1 << ACD);     // disable comparator
-  unsigned char seconds = rtc_seconds;
-  sleep_mode();         // Enter sleep mode.
-  GICR &= ~(1 << INT0); // disable INT0
-  ADCSRA |= (1 << ADEN);
-  // TCCR2 = rtc_kSetTCCR2; // Write dummy value to control register
-  // while (ASSR & ((1 << TCN2UB) | (1 << OCR2UB) | (1 << TCR2UB))) {
-  // }
-
-  // test if it was a timer wake up or external interrupt
-  if (seconds == rtc_seconds)
-    return true;
-  else
-    return false;
-}
-
-ISR(INT0_vect) {
-  GICR &= ~(1 << INT0); // disable INT0
-}
 
 void initVariant() {
   rtc_init();
