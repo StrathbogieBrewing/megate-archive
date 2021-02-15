@@ -6,8 +6,6 @@
 
 void initVariant() {
   rtc_init();
-  set_sleep_mode(SLEEP_MODE_PWR_SAVE);
-  sleep_enable(); // Enabling sleep mode
 }
 
 // rtc_seconds = 0;

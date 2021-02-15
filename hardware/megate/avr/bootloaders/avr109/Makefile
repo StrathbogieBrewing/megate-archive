@@ -61,7 +61,8 @@ clean:
 LFUSE = 0xE1
 
 # change HFUSE for 512 bytes of boot memory and move reset vector to boot memory
-HFUSE = 0xDC
+# enable CKOPT
+HFUSE = 0xCC
 
 ## AVRDude Programming Bootloader
 program: avr109.hex
@@ -69,3 +70,8 @@ program: avr109.hex
 
 # read data from eeprom using bootloader
 # avrdude -c avr109 -p m8 -P /dev/ttyUSB0 -C avrdude.conf -b 9600 -U eeprom:r:read.hex:i
+
+# create a file /etc/udev/rules.d/99-Custom.rules and a rules
+# SUBSYSTEM=="usb", ATTRS{idVendor}=="03eb", ATTRS{idProduct}=="2104", GROUP="dialout"
+
+# relaod rules with udevadm control --reload-rules && udevadm trigger

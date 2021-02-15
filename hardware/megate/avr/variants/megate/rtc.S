@@ -32,10 +32,13 @@ rtc_init:
 	; set timer 2 with 128 prescaling for 256 Hz clock (1 Hz overflow)
 	ldi		R22, (1 << CS22) | (1 << CS20)
   out		_SFR_IO_ADDR(TCCR2), R22
-; waitASSR:
-; 	in		R22, _SFR_IO_ADDR(ASSR)
-; 	andi  R22, ((1 << TCN2UB) | (1 << OCR2UB) | (1 << TCR2UB))
-; 	brne  waitASSR
+
+waitASSR:
+	in		R22, _SFR_IO_ADDR(ASSR)
+	andi  R22, ((1 << TCN2UB) | (1 << OCR2UB) | (1 << TCR2UB))
+	brne  waitASSR
+
+	sbi		_SFR_IO_ADDR(DDRD), PD6
 
 	; initial quick OSCCAL calibration
 waitCalibrate:
@@ -52,7 +55,7 @@ waitCalibrate:
 
 	; enable timer overflow interrupt
 	in		R22, _SFR_IO_ADDR(TIMSK)
-	ori		R22, (1 << TOV2)
+	ori		R22, (1 << TOIE2)
 	out		_SFR_IO_ADDR(TIMSK), R22
 	sei
 
@@ -138,6 +141,11 @@ TIMER2_OVF_vect:
 	push	ZH
 	in		R25, _SFR_IO_ADDR(SREG)
 	push	R25
+
+	in		R25, _SFR_IO_ADDR(PORTD)
+	ldi   ZL, (1 << PD6)
+	eor   R25, ZL
+	out   _SFR_IO_ADDR(PORTD), R25
 
 	ldi		ZL, lo8(rtc_seconds)
 	ldi		ZH, hi8(rtc_seconds)

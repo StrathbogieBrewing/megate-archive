@@ -7,6 +7,8 @@
 extern "C" {
 #endif
 
+// #define rtc_kTCCR2 ((1 << CS22) | (1 << CS20))
+
 extern volatile unsigned char rtc_seconds;
 extern volatile unsigned char rtc_minutes;
 extern volatile unsigned char rtc_hours;

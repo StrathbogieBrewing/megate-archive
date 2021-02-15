@@ -69,6 +69,7 @@ void loop() {
   // update seconds awake timer
   if (seconds != rtc_seconds) {
     seconds = rtc_seconds;
+    // cal = rtc_calibrate();
     if (++secondsAwake == 0)
       --secondsAwake;
   }
