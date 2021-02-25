@@ -64,9 +64,11 @@ LFUSE = 0xE1
 # enable CKOPT
 HFUSE = 0xCC
 
+LOCK = 0xEF
+
 ## AVRDude Programming Bootloader
 program: avr109.hex
-	avrdude -C avrdude.conf -c stk500v2 -P usb -p m8 -e -U flash:w:avr109.hex -U lfuse:w:$(LFUSE):m -U hfuse:w:$(HFUSE):m
+	avrdude -C avrdude.conf -c stk500v2 -P usb -p m8 -e -U flash:w:avr109.hex -U lfuse:w:$(LFUSE):m -U hfuse:w:$(HFUSE):m -U lock:w:$(LOCK):m
 
 # read data from eeprom using bootloader
 # avrdude -c avr109 -p m8 -P /dev/ttyUSB0 -C avrdude.conf -b 9600 -U eeprom:r:read.hex:i

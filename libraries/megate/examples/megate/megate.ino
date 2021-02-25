@@ -5,13 +5,16 @@
 
 #define kSleepDelay (10)
 
+// eeprom map
 #define kEepromStartTime ((uint16_t *)0)
 #define kEepromDuration ((uint16_t *)2)
 #define kEepromEvents ((uint16_t *)4)
+#define kEepromAdjust ((uint16_t *)6)
 
 const int load_pin = 9; // ic pin 15
 
 static int cal = 0;
+static int adjustment = -15; // error - deci Hz from 32768 Hz
 
 // getter functions
 int getTime() { return rtc_minutes + rtc_hours * 60; }
@@ -19,6 +22,7 @@ int getTime() { return rtc_minutes + rtc_hours * 60; }
 int getStartTime() { return (int)eeprom_read_word(kEepromStartTime); }
 int getDuration() { return (int)eeprom_read_word(kEepromDuration); }
 int getEvents() { return (int)eeprom_read_word(kEepromEvents); }
+int getAdjust() { return (int)eeprom_read_word(kEepromAdjust); }
 
 int getSeconds() { return rtc_seconds; }
 //
@@ -30,13 +34,15 @@ void setTime(int v) { rtc_minutes = v % 60; rtc_hours = v / 60;}
 void setStartTime(int v) { eeprom_write_word(kEepromStartTime, (uint16_t)v); }
 void setDuration(int v) { eeprom_write_word(kEepromDuration, (uint16_t)v); }
 void setEvents(int v) { eeprom_write_word(kEepromEvents, (uint16_t)v); }
+void setAdjust(int v) { eeprom_write_word(kEepromAdjust, (uint16_t)v); }
 
 // menu contents
 menuItem menuItems[] = {
     // name, getter, setter, format, min value , max value
-    {"CAL", getCal, NULL, Format::unit, 0, 0},
+    // {"CAL", getCal, NULL, Format::unit, 0, 0},
     {"CLOCK", getTime, setTime, Format::time, 0, 1439},
     {"SECS", getSeconds, NULL, Format::unit, 0, 0},
+    {"ADJUST", getAdjust, setAdjust, Format::deci, -50, 50},
     {"START", getStartTime, setStartTime, Format::time, 0, 1439},
     {"DURATION", getDuration, setDuration, Format::unit, 1, 59},
     {"EVENTS", getEvents, setEvents, Format::unit, 1, 24},
@@ -65,13 +71,30 @@ void setup() {
 void loop() {
   static unsigned char secondsAwake = 0;
   static unsigned char seconds = 0;
+  static long error = 0;
 
-  // update seconds awake timer
   if (seconds != rtc_seconds) {
-    seconds = rtc_seconds;
-    // cal = rtc_calibrate();
-    if (++secondsAwake == 0)
+
+    if (++secondsAwake == 0)    // update seconds awake timer
       --secondsAwake;
+
+    error += (long)adjustment;  // update clock error - deci Hz from 32768 Hz
+    if(seconds == 30){          // check for clock adjustment
+      if(error > 327680L){
+        error -= 327680L;
+        cli();
+        rtc_seconds--;
+        sei();
+      }
+      if(error < -327680L){
+        error += 327680L;
+        cli();
+        rtc_seconds++;
+        sei();
+      }
+    }
+
+    seconds = rtc_seconds;
   }
 
   if (secondsAwake >= kSleepDelay) {
