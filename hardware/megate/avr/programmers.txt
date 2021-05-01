@@ -14,9 +14,11 @@ avrisp.program.protocol=stk500v1
 avrisp.program.tool=avrdude
 avrisp.program.extra_params=-P{serial.port}
 
-avrispmkii.name=AVRISP mkII
-avrispmkii.communication=usb
-avrispmkii.protocol=stk500v2
-avrispmkii.program.protocol=stk500v2
-avrispmkii.program.tool=avrdude
-avrispmkii.program.extra_params=-Pusb
+avrispmk2.name=AVR-ISP-MK2
+avrispmk2.communication=usb
+avrispmk2.protocol=stk500v2
+avrispmk2.program.protocol=stk500v2
+avrispmk2.program.tool=avrdude
+avrispmk2.program.extra_params=-Pusb
+avrispmk2.program.params.verbose=-v
+avrispmk2.program.pattern="{runtime.tools.avrdude.path}/bin/avrdude" "-C{runtime.tools.avrdude.path}/etc/avrdude.conf" -p{build.mcu} -c{protocol} {program.extra_params} "-Uflash:w:{build.path}/{build.project_name}.hex:i"
