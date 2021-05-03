@@ -16,8 +16,8 @@ megate.upload.params.quiet=-q
 megate.bootloader.tool=avrdude
 megate.bootloader.low_fuses=0xe1
 megate.bootloader.high_fuses=0xdc
-megate.bootloader.path=avr109
-megate.bootloader.file=avr109/avr109.hex
+megate.bootloader.path=avr109/megate32k
+megate.bootloader.file=avr109.hex
 megate.bootloader.unlock_bits=0x3F
 megate.bootloader.lock_bits=0x0F
 
@@ -31,9 +31,13 @@ jackal.build.board=AVR_MINI
 jackal.build.core=arduino:arduino
 jackal.build.variant=arduino:standard
 
-jackal.upload.maximum_size=16384
+jackal.upload.maximum_size=15872
 jackal.upload.maximum_data_size=1024
 jackal.upload.tool=arduino:avrdude
+
+jackal.upload.speed=9600
+jackal.upload.protocol=avr109
+jackal.upload.params.quiet=-q
 
 # jackal.upload.speed=9600
 # jackal.upload.protocol=stk500v2 No protocol named uses selected programmer in IDE
@@ -42,11 +46,9 @@ jackal.upload.tool=arduino:avrdude
 jackal.bootloader.tool=arduino:avrdude
 jackal.bootloader.low_fuses=0xD7
 jackal.bootloader.high_fuses=0xD4
-jackal.bootloader.extended_fuses=0xF9
+jackal.bootloader.extended_fuses=0xFC
 jackal.bootloader.unlock_bits=0x3F
 jackal.bootloader.lock_bits=0x0F
 
-# jackal.bootloader.path=avr109
-# jackal.bootloader.file=avr109/avr109.hex
-# jackal.bootloader.unlock_bits=0x3F
-# jackal.bootloader.lock_bits=0x0F
+
+jackal.bootloader.file=avr109/jackal/jackal.hex

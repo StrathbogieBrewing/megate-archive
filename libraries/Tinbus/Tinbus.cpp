@@ -17,16 +17,13 @@ void Tinbus::begin() {
 // CRC-8 uses DVB-S2 polynomial
 unsigned char Tinbus::crc8(unsigned char crc, unsigned char data) {
   unsigned char i;
-  bool bit;
   for (i = 0x80; i > 0; i >>= 1) {
-    bit = crc & 0x80;
-    if (data & i) {
+    bool bit = crc & 0x80;
+    if (data & i)
       bit = !bit;
-    }
     crc <<= 1;
-    if (bit) {
+    if (bit)
       crc ^= 0xd5;
-    }
   }
   return crc;
 }

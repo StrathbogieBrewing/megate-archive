@@ -1,13 +1,16 @@
 #include "Tinbus.h"
 
-Tinbus tinbus(Serial2);
+Tinbus tinbus(Serial);
 
 void setup() {
   tinbus.begin();
-  Serial.begin(9600);
+  // Serial.begin(9600);
 }
 
 void loop() {
-  delay(1000);
+
   tinbus.write("Hello");
+  delay(1000);
+  tinbus.write("Bye..");
+  delay(1000);
 }
