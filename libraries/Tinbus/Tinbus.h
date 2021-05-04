@@ -3,8 +3,11 @@
 
 #include "Arduino.h"
 
-#define Tinbus_kFrameSize (8)
-#define Tinbus_kDataSize (6)
+#define Tinbus_kFrameSize (12)
+#define Tinbus_kDataSize (10)
+
+#define Tinbus_kInterFrameMillis (2000L)
+
 
 #define Tinbus_kExternalInterruptPin (2)
 

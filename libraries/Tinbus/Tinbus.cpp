@@ -42,7 +42,7 @@ int Tinbus::sendByte(unsigned char byte) {
   unsigned long time = micros();
   serialPort.write(byte);
   // Serial.println(byte, HEX);
-  while (micros() - time < 2000L) {
+  while (micros() - time < Tinbus_kInterFrameMillis) {
     if (serialPort.available() > 0) {
       if (serialPort.read() != byte) {
         return Tinbus_kWriteCollision;
@@ -56,7 +56,7 @@ int Tinbus::sendByte(unsigned char byte) {
 
 int Tinbus::write(const unsigned char *txData) {
   // has less than 2 ms elapsed since bus activity
-  if (micros() - rxActiveMicros < 2000L) {
+  if (micros() - rxActiveMicros < Tinbus_kInterFrameMillis) {
     return Tinbus_kWriteBusy;
   }
   // is bus active now
@@ -85,7 +85,7 @@ int Tinbus::write(const unsigned char *txData) {
 int Tinbus::read(unsigned char *rxData) {
   unsigned char rxBuffer[Tinbus_kFrameSize];
   unsigned char rxCount = 0;
-  while (micros() - rxActiveMicros < 2000L) {
+  while (micros() - rxActiveMicros < Tinbus_kInterFrameMillis) {
     if (serialPort.available() > 0) {
       unsigned char data = serialPort.read();
       if (rxCount < Tinbus_kFrameSize) {
