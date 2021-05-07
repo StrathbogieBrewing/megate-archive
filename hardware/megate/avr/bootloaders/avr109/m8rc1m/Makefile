@@ -3,9 +3,9 @@
 ###############################################################################
 
 ## General Flags
-PROJECT = avr109
+PROJECT = m8rc1m
 MCU = atmega8
-TARGET = avr109.elf
+TARGET = $(PROJECT).elf
 
 CC = avr-gcc
 
@@ -25,17 +25,17 @@ ASMFLAGS += -x assembler-with-cpp -Wa,-gdwarf2
 
 ## Linker flags
 LDFLAGS = $(COMMON)
-LDFLAGS += -nodefaultlibs -nostartfiles  -Wl,--section-start=.text=0x1E00 -Wl,-Map=avr109.map
+LDFLAGS += -nodefaultlibs -nostartfiles  -Wl,--section-start=.text=0x1E00 -Wl,-Map=$(PROJECT).map
 
 
 ## Objects that must be built in order to link
-OBJECTS = avr109.o
+OBJECTS = $(PROJECT).o
 
 ## Build
-all: $(TARGET) avr109.hex avr109.lss size
+all: $(TARGET) $(PROJECT).hex $(PROJECT).lss size
 
 ## Compile
-avr109.o: avr109.S
+$(PROJECT).o: $(PROJECT).S
 	$(CC) $(INCLUDES) $(ASMFLAGS) -c  $<
 
 ##Link
@@ -55,7 +55,7 @@ size: ${TARGET}
 ## Clean target
 .PHONY: clean
 clean:
-	-rm -rf $(OBJECTS) avr109.elf avr109.hex  avr109.lss avr109.map $(OBJECTS).d
+	-rm -rf $(OBJECTS) $(PROJECT).elf $(PROJECT).hex  $(PROJECT).lss $(PROJECT).map $(OBJECTS).d
 
 # default LFUSE 1 MHZ Internal RC, No brown out
 LFUSE = 0xE1
@@ -67,8 +67,8 @@ HFUSE = 0xCC
 LOCK = 0xEF
 
 ## AVRDude Programming Bootloader
-program: avr109.hex
-	avrdude -C avrdude.conf -c stk500v2 -P usb -p m8 -e -U flash:w:avr109.hex -U lfuse:w:$(LFUSE):m -U hfuse:w:$(HFUSE):m -U lock:w:$(LOCK):m
+program: $(PROJECT).hex
+	avrdude -C avrdude.conf -c stk500v2 -P usb -p m8 -e -U flash:w:$(PROJECT).hex -U lfuse:w:$(LFUSE):m -U hfuse:w:$(HFUSE):m -U lock:w:$(LOCK):m
 
 # read data from eeprom using bootloader
 # avrdude -c avr109 -p m8 -P /dev/ttyUSB0 -C avrdude.conf -b 9600 -U eeprom:r:read.hex:i

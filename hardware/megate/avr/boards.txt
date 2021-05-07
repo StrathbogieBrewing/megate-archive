@@ -16,10 +16,34 @@ megate.upload.params.quiet=-q
 megate.bootloader.tool=avrdude
 megate.bootloader.low_fuses=0xe1
 megate.bootloader.high_fuses=0xdc
-megate.bootloader.path=avr109/megate32k
-megate.bootloader.file=avr109.hex
+#megate.bootloader.path=avr109/megate32k
+megate.bootloader.file=avr109/m8rc1m/m8rc1m.hex
 megate.bootloader.unlock_bits=0x3F
 megate.bootloader.lock_bits=0x0F
+
+##############################################################
+
+m8rc8m.name=ATMEGA8-RCOSC8M-NOBOOT
+m8rc8m.build.mcu=atmega8
+m8rc8m.build.f_cpu=8000000L
+m8rc8m.build.board=AVR_NG
+m8rc8m.build.core=arduino:arduino
+m8rc8m.build.variant=arduino:standard
+
+m8rc8m.upload.maximum_size=7680
+m8rc8m.upload.maximum_data_size=1024
+m8rc8m.upload.tool=arduino:avrdude
+# m8rc8m.upload.speed=9600
+# m8rc8m.upload.protocol=avr109
+# m8rc8m.upload.params.quiet=-q
+
+m8rc8m.bootloader.tool=arduino:avrdude
+m8rc8m.bootloader.low_fuses=0xe4
+m8rc8m.bootloader.high_fuses=0xd9
+# m8rc8m.bootloader.path=avr109/megate32k
+m8rc8m.bootloader.file=avr109/m8rc1m/m8rc1m.hex
+m8rc8m.bootloader.unlock_bits=0x3F
+m8rc8m.bootloader.lock_bits=0x0F
 
 ##############################################################
 

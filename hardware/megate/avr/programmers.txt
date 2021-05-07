@@ -21,4 +21,4 @@ avrispmk2.program.protocol=stk500v2
 avrispmk2.program.tool=avrdude
 avrispmk2.program.extra_params=-Pusb
 avrispmk2.program.params.verbose=-v
-avrispmk2.program.pattern="{runtime.tools.avrdude.path}/bin/avrdude" "-C{runtime.tools.avrdude.path}/etc/avrdude.conf" -p{build.mcu} -c{protocol} {program.extra_params} "-Uflash:w:{build.path}/{build.project_name}.hex:i"
+avrispmk2.program.pattern="{runtime.tools.avrdude.path}/bin/avrdude" "-C{runtime.tools.avrdude.path}/etc/avrdude.conf" -p{build.mcu} -c{protocol} {program.extra_params} "-Uflash:w:{build.path}/{build.project_name}.hex:i" "-Uhfuse:w:{bootloader.high_fuses}:m" "-Ulfuse:w:{bootloader.low_fuses}:m"
