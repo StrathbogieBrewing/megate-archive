@@ -6,6 +6,33 @@
 
 #include "Tinbus.h"
 
+#include "src/BMS_msg.h"
+
+msg_pack_t vbat = BMS_VBAT;
+msg_pack_t ibat = BMS_IBAT;
+msg_pack_t vtrg = BMS_VTRG;
+msg_pack_t itrg = BMS_ITRG;
+msg_pack_t vrng = BMS_VRNG;
+msg_pack_t tbat = BMS_TBAT;
+
+#define BMS_NAMES {     \
+  {"Vbat", BMS_VBAT},   \
+  {"Ibat", BMS_IBAT },  \
+  {"Vtrg", BMS_VTRG },  \
+  {"Itrg", BMS_ITRG },  \
+  {"Vrng", BMS_VRNG },  \
+  {"Tbat", BMS_TBAT },  \
+}
+
+typedef struct {
+  const char *name;
+  const msg_pack_t pack;
+} name_t;
+
+name_t names[] = BMS_NAMES;
+
+#define kNameCount (sizeof(names) / sizeof(name_t))
+
 Tinbus tinbus(Serial);
 
 struct can_frame canMsg;
@@ -69,19 +96,26 @@ void process(void) {
   int16_t chargeCentiAmps = bms.chargeMilliAmps / 10;
   int16_t cellVoltageRange = cellMax - cellMin;
 
-  unsigned char txBuffer[6];
-  txBuffer[0] = 0x80; // highest priority
-  txBuffer[1] = 0x00; // msg ID = 0
-  txBuffer[2] = cellSum >> 8;
-  txBuffer[3] = cellSum & 0xFF;
-  txBuffer[4] = chargeCentiAmps >> 8;
-  txBuffer[5] = chargeCentiAmps & 0xFF;
-  txBuffer[6] = (int8_t)bms.temperature[0];
-  txBuffer[7] = (int8_t)bms.temperature[1];
-  txBuffer[8] = cellVoltageRange >> 8;
-  txBuffer[9] = cellVoltageRange & 0xFF;
+  bms.temperature[0]+=32;
+  bms.chargeMilliAmps+=16536;
 
-  tinbus.write(txBuffer);
+  msg_message msg;
+  msg_pack(msg, &vbat, cellSum);
+  msg_pack(msg, &ibat, chargeCentiAmps);
+  msg_pack(msg, &vtrg, 26800);
+  msg_pack(msg, &itrg, 100);
+  msg_pack(msg, &vrng, cellVoltageRange);
+  msg_pack(msg, &tbat, bms.temperature[0]);
+
+  char index = kNameCount;
+  while(--index >= 0){
+    int value = msg_unpack(msg, &names[index].pack);
+    Serial.print(names[index].name);
+    Serial.print('\t');
+    Serial.println(value);
+  }
+
+  // tinbus.write(msg);
 }
 
 void setup() {
@@ -89,7 +123,9 @@ void setup() {
   wdt_enable(WDTO_1S);
   wdt_reset();
 
-  tinbus.begin();
+  // tinbus.begin();
+
+  Serial.begin(9600);
 
   SPI.begin();
 
@@ -103,10 +139,10 @@ void setup() {
 
 void loop() {
 
-      // debug...
-      delay(250);
-      bms.temperature[0]++;
-      process();
+  // debug...
+  delay(250);
+
+  process();
 
   if (mcp2515.readMessage(&canMsg) == MCP2515::ERROR_OK) {
     if (canMsg.can_id == (CANBUS_CAN_ID_SHUNT | CAN_EFF_FLAG)) {
