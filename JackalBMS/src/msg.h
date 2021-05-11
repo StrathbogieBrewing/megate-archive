@@ -21,7 +21,7 @@ typedef struct {
 typedef unsigned char msg_message[10];
 
 void msg_pack(msg_message msg, msg_pack_t *pack, int value);
-int msg_unpack(msg_message msg, msg_pack_t *pack);
+bool msg_unpack(msg_message msg, msg_pack_t *pack, int *value);
 
 
 

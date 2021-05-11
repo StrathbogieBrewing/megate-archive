@@ -15,21 +15,21 @@ msg_pack_t itrg = BMS_ITRG;
 msg_pack_t vrng = BMS_VRNG;
 msg_pack_t tbat = BMS_TBAT;
 
-#define BMS_NAMES {     \
-  {"Vbat", BMS_VBAT},   \
-  {"Ibat", BMS_IBAT },  \
-  {"Vtrg", BMS_VTRG },  \
-  {"Itrg", BMS_ITRG },  \
-  {"Vrng", BMS_VRNG },  \
-  {"Tbat", BMS_TBAT },  \
-}
-
-typedef struct {
-  const char *name;
-  const msg_pack_t pack;
-} name_t;
-
-name_t names[] = BMS_NAMES;
+// #define BMS_NAMES {     \
+//   {"Vbat", BMS_VBAT},   \
+//   {"Ibat", BMS_IBAT },  \
+//   {"Vtrg", BMS_VTRG },  \
+//   {"Itrg", BMS_ITRG },  \
+//   {"Vrng", BMS_VRNG },  \
+//   {"Tbat", BMS_TBAT },  \
+// }
+//
+// typedef struct {
+//   const char *name;
+//   const msg_pack_t pack;
+// } name_t;
+//
+// name_t names[] = BMS_NAMES;
 
 #define kNameCount (sizeof(names) / sizeof(name_t))
 
@@ -75,7 +75,7 @@ void process(void) {
   }
 
   if (cellMax > 0) {
-    bms.balanceVoltage = (cellSum / 8) - 1;
+    bms.balanceVoltage = (cellSum / 8) + 5;
     if (bms.balanceVoltage < 3000) {
       bms.balanceVoltage = 3000;
     }
@@ -96,36 +96,30 @@ void process(void) {
   int16_t chargeCentiAmps = bms.chargeMilliAmps / 10;
   int16_t cellVoltageRange = cellMax - cellMin;
 
-  bms.temperature[0]+=32;
-  bms.chargeMilliAmps+=16536;
-
   msg_message msg;
   msg_pack(msg, &vbat, cellSum);
   msg_pack(msg, &ibat, chargeCentiAmps);
   msg_pack(msg, &vtrg, 26800);
-  msg_pack(msg, &itrg, 100);
+  msg_pack(msg, &itrg, 0);
   msg_pack(msg, &vrng, cellVoltageRange);
   msg_pack(msg, &tbat, bms.temperature[0]);
+  tinbus.write(msg);
 
-  char index = kNameCount;
-  while(--index >= 0){
-    int value = msg_unpack(msg, &names[index].pack);
-    Serial.print(names[index].name);
-    Serial.print('\t');
-    Serial.println(value);
-  }
-
-  // tinbus.write(msg);
+  // char index = kNameCount;
+  // while(--index >= 0){
+  //   int value = msg_unpack(msg, &names[index].pack);
+  //   Serial.print(names[index].name);
+  //   Serial.print('\t');
+  //   Serial.println(value);
+  // }
 }
 
 void setup() {
   // enable watchdog timer
-  wdt_enable(WDTO_1S);
   wdt_reset();
+  wdt_enable(WDTO_1S);
 
-  // tinbus.begin();
-
-  Serial.begin(9600);
+  tinbus.begin();
 
   SPI.begin();
 
@@ -140,9 +134,12 @@ void setup() {
 void loop() {
 
   // debug...
-  delay(250);
+  // delay(250);
+  // process();
 
-  process();
+  // poll for received data, and ignore it
+  msg_message rxmsg;
+  tinbus.read(rxmsg);
 
   if (mcp2515.readMessage(&canMsg) == MCP2515::ERROR_OK) {
     if (canMsg.can_id == (CANBUS_CAN_ID_SHUNT | CAN_EFF_FLAG)) {
