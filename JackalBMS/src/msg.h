@@ -11,20 +11,24 @@ enum {
   MSG_BOOL,      // display as on / off
 };
 
+
+
 typedef struct {
-  const unsigned int  msgID;
+  const unsigned char msgID;
   const unsigned char dataBitOffset;
   const unsigned char dataBitCount;
   const unsigned char dataFormat;
 } msg_pack_t;
 
+typedef struct {
+  const char *name;
+  const msg_pack_t pack;
+} msg_name_t;
+
 typedef unsigned char msg_message[10];
 
 void msg_pack(msg_message msg, msg_pack_t *pack, int value);
 bool msg_unpack(msg_message msg, msg_pack_t *pack, int *value);
-
-
-
 
 
 #endif // MESSAGE_H

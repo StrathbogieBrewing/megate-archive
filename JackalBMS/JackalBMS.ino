@@ -15,23 +15,9 @@ msg_pack_t itrg = BMS_ITRG;
 msg_pack_t vrng = BMS_VRNG;
 msg_pack_t tbat = BMS_TBAT;
 
-// #define BMS_NAMES {     \
-//   {"Vbat", BMS_VBAT},   \
-//   {"Ibat", BMS_IBAT },  \
-//   {"Vtrg", BMS_VTRG },  \
-//   {"Itrg", BMS_ITRG },  \
-//   {"Vrng", BMS_VRNG },  \
-//   {"Tbat", BMS_TBAT },  \
-// }
-//
-// typedef struct {
-//   const char *name;
-//   const msg_pack_t pack;
-// } name_t;
-//
-// name_t names[] = BMS_NAMES;
 
-#define kNameCount (sizeof(names) / sizeof(name_t))
+// msg_name_t names[] = BMS_NAMES;
+// #define kNameCount (sizeof(names) / sizeof(msg_name_t))
 
 Tinbus tinbus(Serial);
 
