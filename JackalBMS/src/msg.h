@@ -1,8 +1,15 @@
 #ifndef MSG_H
 #define MSG_H
 
+#include "tinbus.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum {
-  MSG_MILLI = 0, // make fixed point with 3 decimal places
+  MSG_NULL = 0,
+  MSG_MILLI,     // make fixed point with 3 decimal places
   MSG_CENTI,     // make fixed point with 2 decimal places
   MSG_DECI,      // make fixed point with 1 decimal places
   MSG_UNIT,      // display at least one digit
@@ -11,24 +18,26 @@ enum {
   MSG_BOOL,      // display as on / off
 };
 
-
-
 typedef struct {
   const unsigned char msgID;
-  const unsigned char dataBitOffset;
-  const unsigned char dataBitCount;
-  const unsigned char dataFormat;
+  const unsigned char bitOffset;
+  const unsigned char bitCount;
+  const unsigned char format;
 } msg_pack_t;
+
 
 typedef struct {
   const char *name;
   const msg_pack_t pack;
 } msg_name_t;
 
-typedef unsigned char msg_message[10];
 
-void msg_pack(msg_message msg, msg_pack_t *pack, int value);
-bool msg_unpack(msg_message msg, msg_pack_t *pack, int *value);
+void msg_pack(tinbus_frame_t *frame, msg_pack_t *pack, int value);
+int msg_unpack(tinbus_frame_t *frame, msg_pack_t *pack, int *value);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 
 #endif // MESSAGE_H

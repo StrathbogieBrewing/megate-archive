@@ -4,7 +4,7 @@
 
 #include "src/mcp2515.h"
 
-#include "Tinbus.h"
+#include "TinDuino.h"
 
 #include "src/BMS_msg.h"
 
@@ -19,7 +19,7 @@ msg_pack_t tbat = BMS_TBAT;
 // msg_name_t names[] = BMS_NAMES;
 // #define kNameCount (sizeof(names) / sizeof(msg_name_t))
 
-Tinbus tinbus(Serial);
+TinDuino tinDuino(Serial);
 
 struct can_frame canMsg;
 MCP2515 mcp2515(6);
@@ -82,14 +82,15 @@ void process(void) {
   int16_t chargeCentiAmps = bms.chargeMilliAmps / 10;
   int16_t cellVoltageRange = cellMax - cellMin;
 
-  msg_message msg;
-  msg_pack(msg, &vbat, cellSum);
-  msg_pack(msg, &ibat, chargeCentiAmps);
-  msg_pack(msg, &vtrg, 26800);
-  msg_pack(msg, &itrg, 0);
-  msg_pack(msg, &vrng, cellVoltageRange);
-  msg_pack(msg, &tbat, bms.temperature[0]);
-  tinbus.write(msg);
+  tinbus_frame_t txFrame;
+
+  msg_pack(&txFrame, &vbat, cellSum);
+  msg_pack(&txFrame, &ibat, chargeCentiAmps);
+  msg_pack(&txFrame, &vtrg, 26800);
+  msg_pack(&txFrame, &itrg, 0);
+  msg_pack(&txFrame, &vrng, cellVoltageRange);
+  msg_pack(&txFrame, &tbat, bms.temperature[0]);
+  tinDuino.write(&txFrame);
 
   // char index = kNameCount;
   // while(--index >= 0){
@@ -105,27 +106,29 @@ void setup() {
   wdt_reset();
   wdt_enable(WDTO_1S);
 
-  tinbus.begin();
+  tinDuino.begin();
 
   SPI.begin();
 
   pinMode(buzzerPin, OUTPUT);
   pinMode(ledPin, OUTPUT);
 
-  mcp2515.reset();
-  mcp2515.setBitrate(CAN_250KBPS, MCP_8MHZ);
-  mcp2515.setNormalMode();
+  // mcp2515.reset();
+  // mcp2515.setBitrate(CAN_250KBPS, MCP_8MHZ);
+  // mcp2515.setNormalMode();
 }
 
 void loop() {
 
   // debug...
-  // delay(250);
-  // process();
+  delay(250);
+  process();
 
   // poll for received data, and ignore it
-  msg_message rxmsg;
-  tinbus.read(rxmsg);
+  tinbus_frame_t rxFrame;
+  tinDuino.read(&rxFrame);
+
+  return;
 
   if (mcp2515.readMessage(&canMsg) == MCP2515::ERROR_OK) {
     if (canMsg.can_id == (CANBUS_CAN_ID_SHUNT | CAN_EFF_FLAG)) {
