@@ -25,19 +25,16 @@ typedef struct {
   const unsigned char format;
 } msg_pack_t;
 
-
 typedef struct {
   const char *name;
   const msg_pack_t pack;
 } msg_name_t;
 
-
 void msg_pack(tinbus_frame_t *frame, msg_pack_t *pack, int value);
-int msg_unpack(tinbus_frame_t *frame, msg_pack_t *pack, int *value);
+int msg_unpack(tinbus_frame_t *frame, const msg_pack_t *pack, int *value);
 
 #ifdef __cplusplus
 } // extern "C"
 #endif
-
 
 #endif // MESSAGE_H

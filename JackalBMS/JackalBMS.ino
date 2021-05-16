@@ -2,11 +2,11 @@
 #include <avr/wdt.h>
 #include <limits.h>
 
-#include "src/mcp2515.h"
+#include "mcp2515.h"
 
 #include "TinDuino.h"
 
-#include "src/BMS_msg.h"
+#include "msg_solar.h"
 
 msg_pack_t vbat = BMS_VBAT;
 msg_pack_t ibat = BMS_IBAT;
@@ -14,10 +14,6 @@ msg_pack_t vtrg = BMS_VTRG;
 msg_pack_t itrg = BMS_ITRG;
 msg_pack_t vrng = BMS_VRNG;
 msg_pack_t tbat = BMS_TBAT;
-
-
-// msg_name_t names[] = BMS_NAMES;
-// #define kNameCount (sizeof(names) / sizeof(msg_name_t))
 
 TinDuino tinDuino(Serial);
 
@@ -83,12 +79,11 @@ void process(void) {
   int16_t cellVoltageRange = cellMax - cellMin;
 
   tinbus_frame_t txFrame;
-
   msg_pack(&txFrame, &vbat, cellSum);
   msg_pack(&txFrame, &ibat, chargeCentiAmps);
-  msg_pack(&txFrame, &vtrg, 26800);
-  msg_pack(&txFrame, &itrg, 0);
-  msg_pack(&txFrame, &vrng, cellVoltageRange);
+  // msg_pack(&txFrame, &vtrg, 26800);
+  // msg_pack(&txFrame, &itrg, 0);
+  // msg_pack(&txFrame, &vrng, cellVoltageRange);
   msg_pack(&txFrame, &tbat, bms.temperature[0]);
   tinDuino.write(&txFrame);
 
@@ -113,22 +108,22 @@ void setup() {
   pinMode(buzzerPin, OUTPUT);
   pinMode(ledPin, OUTPUT);
 
-  // mcp2515.reset();
-  // mcp2515.setBitrate(CAN_250KBPS, MCP_8MHZ);
-  // mcp2515.setNormalMode();
+  mcp2515.reset();
+  mcp2515.setBitrate(CAN_250KBPS, MCP_8MHZ);
+  mcp2515.setNormalMode();
 }
 
 void loop() {
 
   // debug...
-  delay(250);
-  process();
+  // delay(250);
+  // process();
 
   // poll for received data, and ignore it
-  tinbus_frame_t rxFrame;
-  tinDuino.read(&rxFrame);
+  // tinbus_frame_t rxFrame;
+  // tinDuino.read(&rxFrame);
 
-  return;
+  // return;
 
   if (mcp2515.readMessage(&canMsg) == MCP2515::ERROR_OK) {
     if (canMsg.can_id == (CANBUS_CAN_ID_SHUNT | CAN_EFF_FLAG)) {

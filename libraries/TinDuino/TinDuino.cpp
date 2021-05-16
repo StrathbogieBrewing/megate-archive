@@ -51,8 +51,8 @@ int TinDuino::write(tinbus_frame_t *txFrame) {
 
   // send frame
   unsigned char txCount = 0;
-  while (txCount < tinbus_kFrameSize) {
-    unsigned char *data = (unsigned char *)txFrame;
+  unsigned char *data = (unsigned char *)txFrame;
+  while (txCount++ < tinbus_kFrameSize) {
     int err = sendByte(*data++);
     if (err != tinbus_kOK) {
       return err;

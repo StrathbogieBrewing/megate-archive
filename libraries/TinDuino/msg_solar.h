@@ -1,5 +1,5 @@
-#ifndef BMS_MESSAGE_H
-#define BMS_MESSAGE_H
+#ifndef MSG_SOLAR_H
+#define MSG_SOLAR_H
 
 #include "msg.h"
 
@@ -10,7 +10,7 @@
 #define BMS_VRNG {0x80, 48, 8, MSG_MILLI}
 #define BMS_TBAT {0x80, 56, 8, MSG_UNIT}
 
-#define BMS_NAMES {     \
+#define MSG_NAMES {     \
   {"Vbat", BMS_VBAT},   \
   {"Ibat", BMS_IBAT },  \
   {"Vtrg", BMS_VTRG },  \
@@ -19,4 +19,4 @@
   {"Tbat", BMS_TBAT },  \
 }
 
-#endif // BMS_MESSAGE_H
+#endif // MSG_SOLAR_H
