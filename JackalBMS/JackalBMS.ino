@@ -28,6 +28,8 @@ msg_pack_t btc2 = BMS_BTC2;
 
 TinDuino tinDuino(Serial);
 
+unsigned char frameSequence = 0;
+
 struct can_frame canMsg;
 MCP2515 mcp2515(6);
 
@@ -95,8 +97,12 @@ void process(void) {
   msg_pack(&txFrame, &ibat, chargeCentiAmps);
   msg_pack(&txFrame, &vtrg, 26800);
   msg_pack(&txFrame, &itrg, 2000);
+  txFrame.sequence = 0;
   tinDuino.write(&txFrame);
-
+  frameSequence = txFrame.sequence;
+  digitalWrite(9, HIGH);
+  delayMicroseconds(500);
+  digitalWrite(9, LOW);
 }
 
 void setup() {
@@ -121,25 +127,26 @@ void loop() {
   if(tinDuino.update() == tinbus_kWriteComplete){
     // send other parameters when sequence number matches message ID
     tinbus_frame_t txFrame;
-    if((tinDuino.sequence & 0x06) == 0x2){
+    if((frameSequence & 0x06) == 0x2){
       msg_pack(&txFrame, &cel1, bms.cellVoltage[0]);
       msg_pack(&txFrame, &cel2, bms.cellVoltage[1]);
       msg_pack(&txFrame, &cel3, bms.cellVoltage[2]);
       msg_pack(&txFrame, &cel4, bms.cellVoltage[3]);
       tinDuino.write(&txFrame);
-    } else if((tinDuino.sequence & 0x6) == 0x4){
+    } else if((frameSequence & 0x6) == 0x4){
       msg_pack(&txFrame, &cel5, bms.cellVoltage[4]);
       msg_pack(&txFrame, &cel6, bms.cellVoltage[5]);
       msg_pack(&txFrame, &cel7, bms.cellVoltage[6]);
       msg_pack(&txFrame, &cel8, bms.cellVoltage[7]);
       tinDuino.write(&txFrame);
-    } else if((tinDuino.sequence & 0x6) == 0x6){
+    } else if((frameSequence & 0x6) == 0x6){
       msg_pack(&txFrame, &vbal, bms.balanceVoltage);
       msg_pack(&txFrame, &chah, bms.cellVoltage[1]);
       msg_pack(&txFrame, &btc1, bms.temperature[0]);
       msg_pack(&txFrame, &btc2, bms.temperature[1]);
       tinDuino.write(&txFrame);
     }
+    frameSequence = 0;
   };
 
   if (mcp2515.readMessage(&canMsg) == MCP2515::ERROR_OK) {

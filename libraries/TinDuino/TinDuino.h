@@ -15,11 +15,12 @@ public:
   int update();
   int write(tinbus_frame_t* frame);
   int read(tinbus_frame_t* frame);
-  unsigned char sequence;
+
 
 private:
   HardwareSerial &serialPort;
   unsigned long serialBaud;
+  unsigned char sequence;
 
   tinbus_frame_t txFrame;
   unsigned char txIndex;

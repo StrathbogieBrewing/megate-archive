@@ -50,9 +50,9 @@ int TinDuino::update() {
     unsigned char txData = ((char *)&txFrame)[txIndex];
     if (serialPort.available() > 0) {
       unsigned char rxData = serialPort.read();
-      digitalWrite(9, HIGH);
-      delayMicroseconds(500);
-      digitalWrite(9, LOW);
+      // digitalWrite(9, HIGH);
+      // delayMicroseconds(500);
+      // digitalWrite(9, LOW);
       if (rxData == txData) {
         ++txIndex;
         if (txIndex < tinbus_kFrameSize) {
