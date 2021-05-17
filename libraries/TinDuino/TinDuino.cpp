@@ -28,7 +28,6 @@ int TinDuino::update() {
   noInterrupts();
   unsigned long lastActivity = micros() - rxActiveMicros;
   interrupts();
-
   if (lastActivity > TinDuino_kInterFrameMicros) {
     rxIndex = 0;
     while (serialPort.available() > 0) {
@@ -38,8 +37,10 @@ int TinDuino::update() {
       txIndex = 0;
       unsigned char txData = ((char *)&txFrame)[txIndex];
       serialPort.write(txData);
-      // allow for bus to respond and trigger update of rxActiveMicros
-      delayMicroseconds(500);
+      // imediately update rxActiveMicros
+      noInterrupts();
+      rxActiveMicros = micros();
+      interrupts();
       return tinbus_kWriteBusy;
     } else {
       txIndex = kTXIdle;
@@ -97,23 +98,6 @@ int TinDuino::update() {
   return tinbus_kReadNoData;
 }
 
-// int TinDuino::sendByte(unsigned char byte) {
-//   serialPort.flush(); // wait for any previous tx data to be sent
-//   unsigned long time = micros();
-//   serialPort.write(byte);
-//   // Serial.println(byte, HEX);
-//   while (micros() - time < TinDuino_kInterFrameMicros) {
-//     if (serialPort.available() > 0) {
-//       if (serialPort.read() != byte) {
-//         return tinbus_kWriteCollision;
-//       } else {
-//         return tinbus_kOK;
-//       }
-//     }
-//   }
-//   return tinbus_kWriteTimeout;
-// }
-
 int TinDuino::write(tinbus_frame_t *frame) {
   if (txIndex != kTXIdle) {
     return tinbus_kWriteBusy;
@@ -130,6 +114,16 @@ int TinDuino::write(tinbus_frame_t *frame) {
   txIndex = kTXRequest;
   return tinbus_kOK;
 }
+
+int TinDuino::read(tinbus_frame_t *frame) {
+  if (rxIndex == kRXDataReady) {
+    memcpy(frame, &rxFrame, tinbus_kFrameSize);
+    rxIndex = kRXDone;
+    return tinbus_kOK;
+  }
+  return tinbus_kReadNoData;
+}
+
 
 //
 //
@@ -163,14 +157,22 @@ int TinDuino::write(tinbus_frame_t *frame) {
 //   return tinbus_kOK;
 // }
 
-int TinDuino::read(tinbus_frame_t *frame) {
-  if (rxIndex == kRXDataReady) {
-    memcpy(frame, &rxFrame, tinbus_kFrameSize);
-    rxIndex = kRXDone;
-    return tinbus_kOK;
-  }
-  return tinbus_kReadNoData;
-}
+// int TinDuino::sendByte(unsigned char byte) {
+//   serialPort.flush(); // wait for any previous tx data to be sent
+//   unsigned long time = micros();
+//   serialPort.write(byte);
+//   // Serial.println(byte, HEX);
+//   while (micros() - time < TinDuino_kInterFrameMicros) {
+//     if (serialPort.available() > 0) {
+//       if (serialPort.read() != byte) {
+//         return tinbus_kWriteCollision;
+//       } else {
+//         return tinbus_kOK;
+//       }
+//     }
+//   }
+//   return tinbus_kWriteTimeout;
+// }
 
 // static unsigned char count = 0;
 // static tinbus_frame_t frame;

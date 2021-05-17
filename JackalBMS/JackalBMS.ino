@@ -100,9 +100,10 @@ void process(void) {
   txFrame.sequence = 0;
   tinDuino.write(&txFrame);
   frameSequence = txFrame.sequence;
-  digitalWrite(9, HIGH);
-  delayMicroseconds(500);
-  digitalWrite(9, LOW);
+
+  // digitalWrite(9, HIGH);
+  // delayMicroseconds(500);
+  // digitalWrite(9, LOW);
 }
 
 void setup() {
@@ -127,19 +128,19 @@ void loop() {
   if(tinDuino.update() == tinbus_kWriteComplete){
     // send other parameters when sequence number matches message ID
     tinbus_frame_t txFrame;
-    if((frameSequence & 0x06) == 0x2){
+    if((frameSequence & 0xFE) == cel1.msgID & 0xFE){
       msg_pack(&txFrame, &cel1, bms.cellVoltage[0]);
       msg_pack(&txFrame, &cel2, bms.cellVoltage[1]);
       msg_pack(&txFrame, &cel3, bms.cellVoltage[2]);
       msg_pack(&txFrame, &cel4, bms.cellVoltage[3]);
       tinDuino.write(&txFrame);
-    } else if((frameSequence & 0x6) == 0x4){
+    } else if((frameSequence & 0xFE) == cel5.msgID & 0xFE){
       msg_pack(&txFrame, &cel5, bms.cellVoltage[4]);
       msg_pack(&txFrame, &cel6, bms.cellVoltage[5]);
       msg_pack(&txFrame, &cel7, bms.cellVoltage[6]);
       msg_pack(&txFrame, &cel8, bms.cellVoltage[7]);
       tinDuino.write(&txFrame);
-    } else if((frameSequence & 0x6) == 0x6){
+    } else if((frameSequence & 0xFE) == vbal.msgID & 0xFE){
       msg_pack(&txFrame, &vbal, bms.balanceVoltage);
       msg_pack(&txFrame, &chah, bms.cellVoltage[1]);
       msg_pack(&txFrame, &btc1, bms.temperature[0]);
