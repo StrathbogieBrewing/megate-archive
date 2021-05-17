@@ -64,28 +64,27 @@ int tinux_read(tinbus_frame_t *rxFrame) {
     return tinbus_kReadNoData;
   }
   // read 2 frames into ring buffer
-  while ((unsigned char)(rxHead - rxTail)< tinbus_kFrameSize * 2){
+  while ((unsigned char)(rxHead - rxTail) < tinbus_kFrameSize * 2){
     read(fd, &ringBuffer[rxHead++], 1);
   }
+  // look for a good frame
   while((unsigned char)(rxHead - rxTail) >= tinbus_kFrameSize){
     if(ringBuffer[rxTail] == tinbus_kStart){
-      // this could be the start of a valid frame
+      // this could be the start of a valid frame, copy it from buffer
       unsigned char *data = (unsigned char *)rxFrame;
-      *data++ = tinbus_kStart;
-      unsigned char crc = 0;
-      unsigned char rxIndex = rxTail + 1;
-      unsigned char bytes = tinbus_kFrameSize - 2;
+      unsigned char rxIndex = rxTail;
+      unsigned char bytes = tinbus_kFrameSize;
       while (bytes--) {
-        *data = ringBuffer[rxIndex++];
-        crc = tinbus_crcByte(crc, *data++);
+        *data++ = ringBuffer[rxIndex++];
       }
-      *data = ringBuffer[rxIndex++];
-      if(crc == *data){
+      // check crc
+      unsigned char crc = tinbus_crcFrame(rxFrame);
+      if(crc == rxFrame->crc){
         rxTail = rxIndex;
         return tinbus_kOK;
       }
     }
-    // not the start of a valid frame
+    // not the start of a valid frame, try from the next byte in buffer
     rxTail++;
   }
   // reset buffer - too much corrupt data

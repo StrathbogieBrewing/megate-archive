@@ -12,8 +12,19 @@ msg_pack_t vbat = BMS_VBAT;
 msg_pack_t ibat = BMS_IBAT;
 msg_pack_t vtrg = BMS_VTRG;
 msg_pack_t itrg = BMS_ITRG;
-msg_pack_t vrng = BMS_VRNG;
-msg_pack_t tbat = BMS_TBAT;
+
+msg_pack_t cel1 = BMS_CEL1;
+msg_pack_t cel2 = BMS_CEL2;
+msg_pack_t cel3 = BMS_CEL3;
+msg_pack_t cel4 = BMS_CEL4;
+msg_pack_t cel5 = BMS_CEL5;
+msg_pack_t cel6 = BMS_CEL6;
+msg_pack_t cel7 = BMS_CEL7;
+msg_pack_t cel8 = BMS_CEL8;
+msg_pack_t vbal = BMS_VBAL;
+msg_pack_t chah = BMS_CHAH;
+msg_pack_t btc1 = BMS_BTC1;
+msg_pack_t btc2 = BMS_BTC2;
 
 TinDuino tinDuino(Serial);
 
@@ -76,24 +87,16 @@ void process(void) {
   }
 
   int16_t chargeCentiAmps = bms.chargeMilliAmps / 10;
-  int16_t cellVoltageRange = cellMax - cellMin;
+  // int16_t cellVoltageRange = cellMax - cellMin;
 
   tinbus_frame_t txFrame;
+  // always send battery voltage and current
   msg_pack(&txFrame, &vbat, cellSum);
   msg_pack(&txFrame, &ibat, chargeCentiAmps);
-  // msg_pack(&txFrame, &vtrg, 26800);
-  // msg_pack(&txFrame, &itrg, 0);
-  // msg_pack(&txFrame, &vrng, cellVoltageRange);
-  msg_pack(&txFrame, &tbat, bms.temperature[0]);
+  msg_pack(&txFrame, &vtrg, 26800);
+  msg_pack(&txFrame, &itrg, 2000);
   tinDuino.write(&txFrame);
 
-  // char index = kNameCount;
-  // while(--index >= 0){
-  //   int value = msg_unpack(msg, &names[index].pack);
-  //   Serial.print(names[index].name);
-  //   Serial.print('\t');
-  //   Serial.println(value);
-  // }
 }
 
 void setup() {
@@ -114,16 +117,30 @@ void setup() {
 }
 
 void loop() {
-
-  // debug...
-  // delay(250);
-  // process();
-
-  // poll for received data, and ignore it
-  // tinbus_frame_t rxFrame;
-  // tinDuino.read(&rxFrame);
-
-  // return;
+  // update bus
+  if(tinDuino.update() == tinbus_kWriteComplete){
+    // send other parameters when sequence number matches message ID
+    tinbus_frame_t txFrame;
+    if((tinDuino.sequence & 0x06) == 0x2){
+      msg_pack(&txFrame, &cel1, bms.cellVoltage[0]);
+      msg_pack(&txFrame, &cel2, bms.cellVoltage[1]);
+      msg_pack(&txFrame, &cel3, bms.cellVoltage[2]);
+      msg_pack(&txFrame, &cel4, bms.cellVoltage[3]);
+      tinDuino.write(&txFrame);
+    } else if((tinDuino.sequence & 0x6) == 0x4){
+      msg_pack(&txFrame, &cel5, bms.cellVoltage[4]);
+      msg_pack(&txFrame, &cel6, bms.cellVoltage[5]);
+      msg_pack(&txFrame, &cel7, bms.cellVoltage[6]);
+      msg_pack(&txFrame, &cel8, bms.cellVoltage[7]);
+      tinDuino.write(&txFrame);
+    } else if((tinDuino.sequence & 0x6) == 0x6){
+      msg_pack(&txFrame, &vbal, bms.balanceVoltage);
+      msg_pack(&txFrame, &chah, bms.cellVoltage[1]);
+      msg_pack(&txFrame, &btc1, bms.temperature[0]);
+      msg_pack(&txFrame, &btc2, bms.temperature[1]);
+      tinDuino.write(&txFrame);
+    }
+  };
 
   if (mcp2515.readMessage(&canMsg) == MCP2515::ERROR_OK) {
     if (canMsg.can_id == (CANBUS_CAN_ID_SHUNT | CAN_EFF_FLAG)) {

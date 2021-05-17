@@ -10,6 +10,7 @@ enum {
   tinbus_kWriteBusy,
   tinbus_kWriteCollision,
   tinbus_kWriteTimeout,
+  tinbus_kWriteComplete,
   tinbus_kReadNoData,
   tinbus_kReadCRCError,
   tinbus_kReadSequenceError,

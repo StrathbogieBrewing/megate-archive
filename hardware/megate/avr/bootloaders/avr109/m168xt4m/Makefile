@@ -3,9 +3,9 @@
 ###############################################################################
 
 ## General Flags
-PROJECT = jackal
+PROJECT = m168xt4m
 MCU = atmega168
-TARGET = jackal.elf
+TARGET = $(PROJECT).elf
 
 CC = avr-gcc
 
@@ -25,17 +25,17 @@ ASMFLAGS += -x assembler-with-cpp -Wa,-gdwarf2
 
 ## Linker flags
 LDFLAGS = $(COMMON)
-LDFLAGS += -nodefaultlibs -nostartfiles  -Wl,--section-start=.text=0x3E00 -Wl,-Map=jackal.map
+LDFLAGS += -nodefaultlibs -nostartfiles  -Wl,--section-start=.text=0x3E00 -Wl,-Map=$(PROJECT).map
 
 
 ## Objects that must be built in order to link
-OBJECTS = jackal.o
+OBJECTS = $(PROJECT).o
 
 ## Build
-all: $(TARGET) jackal.hex jackal.lss size
+all: $(TARGET) $(PROJECT).hex $(PROJECT).lss size
 
 ## Compile
-jackal.o: jackal.S
+$(PROJECT).o: $(PROJECT).S
 	$(CC) $(INCLUDES) $(ASMFLAGS) -c  $<
 
 ##Link
@@ -55,20 +55,15 @@ size: ${TARGET}
 ## Clean target
 .PHONY: clean
 clean:
-	-rm -rf $(OBJECTS) jackal.elf jackal.hex  jackal.lss jackal.map $(OBJECTS).d
+	-rm -rf $(OBJECTS) $(PROJECT).elf $(PROJECT).hex  $(PROJECT).lss $(PROJECT).map $(OBJECTS).d
 
-# default LFUSE 1 MHZ Internal RC, No brown out
-LFUSE = 0xE1
-
-# change HFUSE for 512 bytes of boot memory and move reset vector to boot memory
-# enable CKOPT
-HFUSE = 0xCC
-
-LOCK = 0xEF
+LFUSE = 0xD7
+HFUSE = 0xD4
+LOCK = 0x0F
 
 ## AVRDude Programming Bootloader
-program: jackal.hex
-	avrdude -C avrdude.conf -c stk500v2 -P usb -p m168 -e -U flash:w:jackal.hex -U lfuse:w:$(LFUSE):m -U hfuse:w:$(HFUSE):m -U lock:w:$(LOCK):m
+program: $(PROJECT).hex
+	avrdude -C avrdude.conf -c stk500v2 -P usb -p m168 -e -U flash:w:$(PROJECT).hex -U lfuse:w:$(LFUSE):m -U hfuse:w:$(HFUSE):m -U lock:w:$(LOCK):m
 
 # read data from eeprom using bootloader
 # avrdude -c avr109 -p m8 -P /dev/ttyUSB0 -C avrdude.conf -b 9600 -U eeprom:r:read.hex:i

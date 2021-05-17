@@ -12,15 +12,20 @@ class TinDuino {
 public:
   TinDuino(HardwareSerial &serial, unsigned long baud = 1200);
   void begin();
-  int write(tinbus_frame_t* txFrame);
-  int read(tinbus_frame_t* rxData);
+  int update();
+  int write(tinbus_frame_t* frame);
+  int read(tinbus_frame_t* frame);
+  unsigned char sequence;
 
 private:
   HardwareSerial &serialPort;
   unsigned long serialBaud;
-  int sendByte(unsigned char byte);
 
-  unsigned char sequence;
+  tinbus_frame_t txFrame;
+  unsigned char txIndex;
+  tinbus_frame_t rxFrame;
+  unsigned char rxIndex;
+
   static void externalInterrupt(void);
   static volatile unsigned long rxActiveMicros;
 };

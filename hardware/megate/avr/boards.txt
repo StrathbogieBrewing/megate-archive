@@ -47,32 +47,32 @@ m8rc8m.bootloader.lock_bits=0x0F
 
 ##############################################################
 
-jackal.name=Jackal
+m168xt4m.name=Jackal
 
-jackal.build.mcu=atmega168
-jackal.build.f_cpu=3686400L
-jackal.build.board=AVR_MINI
-jackal.build.core=arduino:arduino
-jackal.build.variant=arduino:standard
+m168xt4m.build.mcu=atmega168
+m168xt4m.build.f_cpu=4000000L
+m168xt4m.build.board=AVR_MINI
+m168xt4m.build.core=arduino:arduino
+m168xt4m.build.variant=arduino:standard
 
-jackal.upload.maximum_size=15872
-jackal.upload.maximum_data_size=1024
-jackal.upload.tool=arduino:avrdude
+m168xt4m.upload.maximum_size=15872
+m168xt4m.upload.maximum_data_size=1024
+m168xt4m.upload.tool=arduino:avrdude
 
-jackal.upload.speed=9600
-jackal.upload.protocol=avr109
-jackal.upload.params.quiet=-q
+m168xt4m.upload.speed=9600
+m168xt4m.upload.protocol=avr109
+m168xt4m.upload.params.quiet=-q
 
-# jackal.upload.speed=9600
-# jackal.upload.protocol=stk500v2 No protocol named uses selected programmer in IDE
-# jackal.upload.params.quiet=-q
+# m168xt4m.upload.speed=9600
+# m168xt4m.upload.protocol=stk500v2 No protocol named uses selected programmer in IDE
+# m168xt4m.upload.params.quiet=-q
 
-jackal.bootloader.tool=arduino:avrdude
-jackal.bootloader.low_fuses=0xD7
-jackal.bootloader.high_fuses=0xD4
-jackal.bootloader.extended_fuses=0xFC
-jackal.bootloader.unlock_bits=0x3F
-jackal.bootloader.lock_bits=0x0F
+m168xt4m.bootloader.tool=arduino:avrdude
+m168xt4m.bootloader.low_fuses=0xD7
+m168xt4m.bootloader.high_fuses=0xD4
+m168xt4m.bootloader.extended_fuses=0xFC
+m168xt4m.bootloader.unlock_bits=0x3F
+m168xt4m.bootloader.lock_bits=0x0F
 
 
-jackal.bootloader.file=avr109/jackal/jackal.hex
+m168xt4m.bootloader.file=avr109/m168xt4m/m168xt4m.hex

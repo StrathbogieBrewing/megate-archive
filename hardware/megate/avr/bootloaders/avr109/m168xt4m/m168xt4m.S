@@ -3,7 +3,7 @@
 ; this bootloader is compatible with avrdude and avrprog.
 ; it is broadly based on the avr 109 format
 ; first program the micro with this code in ISP mode
-; rc oscillator calibrated to 1 MHz from 32.768 KHz external crystal
+; xtal oscillator at 4 MHz
 ; baud rate 9600 bps, full duplex or half duplex
 
 #define		BOOTSTART 	0x1F00
@@ -69,7 +69,7 @@ startBootloader:
 ; *** initialise uart ***
 inituart:
 	; set baud rate to 9600 bps
-	ldi     TEMP, 23
+	ldi     TEMP, 25
 	sts     _SFR_MEM_ADDR(UBRR0L), TEMP
 	; clear txc
 	ldi     TEMP, (1 << TXC0)
