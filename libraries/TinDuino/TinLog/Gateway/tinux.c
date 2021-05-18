@@ -82,6 +82,9 @@ int tinux_read(tinbus_frame_t *rxFrame) {
       if(crc == rxFrame->crc){
         rxTail = rxIndex;
         return tinbus_kOK;
+      } else {
+        rxTail++;
+        return tinbus_kReadCRCError;
       }
     }
     // not the start of a valid frame, try from the next byte in buffer

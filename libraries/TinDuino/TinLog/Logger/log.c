@@ -9,8 +9,8 @@
 
 #include "log.h"
 #include "mkdir.h"
-#include "msg_solar"
 
+#include "msg_solar.h"
 msg_name_t msgNames[] = MSG_NAMES;
 #define msgCount (sizeof(msgNames) / sizeof(msg_name_t))
 
@@ -224,7 +224,7 @@ bool log_read(const char *source, time_t startSecond, time_t endSecond) {
   while(*ptrEnd){
 
     if((*ptrEnd == '\0') || (*ptrEnd == ',')){
-      
+
       msgSource[queryCount] = msgFind(ptrStart);
       if(msgSource[queryCount] != NULL){
         queryCount++;

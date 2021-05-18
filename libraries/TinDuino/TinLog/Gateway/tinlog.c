@@ -10,6 +10,10 @@
 
 #include "tinux.h"
 
+#include "msg_solar.h"
+msg_name_t msgNames[] = MSG_NAMES;
+#define msgCount (sizeof(msgNames) / sizeof(msg_name_t))
+
 #define kProgramName (0)
 #define kSerialDevice (1)
 
@@ -60,8 +64,38 @@ int main(int argc, char *argv[]) {
 
   while (keepRunning) {
     tinbus_frame_t rxFrame;
-    if (tinux_read(&rxFrame) == tinbus_kOK) {
-      sendUDP((char*)&rxFrame, tinbus_kFrameSize);
+    int result = tinux_read(&rxFrame);
+    if (result == tinbus_kOK) {
+
+      // char str[kBufferSize] = {0};
+      // unsigned char *frame = (unsigned char *)&rxFrame;
+      // sprintf(str + strlen(str), "RX Data : > ");
+      // unsigned char index = 0;
+      // while (index++ < tinbus_kFrameSize) {
+      //   sprintf(str + strlen(str), "0x%2.2X ", *frame++);
+      // }
+      // sprintf(str + strlen(str), "<\n");
+
+      char str[kBufferSize] = {0};
+      sprintf(str, "Message : 0x%2.2X\tSequence : %u\t", rxFrame.msgID, rxFrame.sequence);
+      int found = 0;
+      int index = 0;
+      while(index < msgCount){
+        int value;
+        int format = msg_unpack(&rxFrame, &msgNames[index].pack, &value);
+        if(format != MSG_NULL){
+          if(found) sprintf(str + strlen(str), ",\t");
+          found++;
+          sprintf(str + strlen(str), "%s=%d", msgNames[index].name, value);
+        }
+        index++;
+      }
+      sprintf(str + strlen(str), "\n");
+
+      printf("%s", str);
+      // sendUDP((char*)&rxFrame, tinbus_kFrameSize);
+    } else {
+      printf("Error : %d\n", result);
     }
   }
 

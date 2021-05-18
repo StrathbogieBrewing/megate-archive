@@ -1,5 +1,12 @@
 #include <stdbool.h>
+
+#ifndef __AVR_ARCH__
+#define PROGMEM
+#define getByte(base, offset) base[offset]
+#else
 #include <avr/pgmspace.h>
+#define getByte(base, offset) pgm_read_byte(base + offset)
+#endif
 
 #include "tinbus.h"
 // ./pycrc.py --width 8 --poly 0xd5 --xor-in 0x00 --xor-out 0x00
@@ -26,7 +33,7 @@ static const unsigned char crc_table[256] PROGMEM = {
 
 unsigned char tinbus_crcByte(unsigned char crc, unsigned char data) {
   unsigned char tbl_idx = crc ^ data;
-  return pgm_read_byte(crc_table + tbl_idx);
+  return getByte(crc_table, tbl_idx); //pgm_read_byte(crc_table + tbl_idx);
 }
 
 // CRC-8 uses DVB-S2 polynomial
