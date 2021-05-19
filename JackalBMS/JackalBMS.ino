@@ -3,9 +3,7 @@
 #include <limits.h>
 
 #include "mcp2515.h"
-
 #include "TinDuino.h"
-
 #include "msg_solar.h"
 
 msg_pack_t vbat = BMS_VBAT;
@@ -26,7 +24,8 @@ msg_pack_t chah = BMS_CHAH;
 msg_pack_t btc1 = BMS_BTC1;
 msg_pack_t btc2 = BMS_BTC2;
 
-TinDuino tinDuino(Serial);
+#define kInterruptPin (2)
+TinDuino tinDuino(Serial, kInterruptPin);
 
 unsigned char frameSequence = 0;
 
@@ -35,6 +34,7 @@ MCP2515 mcp2515(6);
 
 const int buzzerPin = 9;
 const int ledPin = 5;
+
 
 #define CANBUS_CAN_ID_SHUNT 40
 #define CANBUS_CAN_ID_BMS 300
@@ -89,21 +89,16 @@ void process(void) {
   }
 
   int16_t chargeCentiAmps = bms.chargeMilliAmps / 10;
-  // int16_t cellVoltageRange = cellMax - cellMin;
 
   tinbus_frame_t txFrame;
   // always send battery voltage and current
   msg_pack(&txFrame, &vbat, cellSum);
   msg_pack(&txFrame, &ibat, chargeCentiAmps);
-  msg_pack(&txFrame, &vtrg, 26800);
+  msg_pack(&txFrame, &vtrg, 26700);
   msg_pack(&txFrame, &itrg, 2000);
   txFrame.sequence = 0;
   tinDuino.write(&txFrame);
   frameSequence = txFrame.sequence;
-
-  // digitalWrite(9, HIGH);
-  // delayMicroseconds(500);
-  // digitalWrite(9, LOW);
 }
 
 void setup() {
@@ -123,7 +118,7 @@ void setup() {
   mcp2515.setNormalMode();
 }
 
-#define SCHEDMSK (0x0E)
+#define SCHEDMSK (0xFE)
 
 void loop() {
   // update bus

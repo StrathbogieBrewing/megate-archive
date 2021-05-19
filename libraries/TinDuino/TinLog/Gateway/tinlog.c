@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
         int value;
         int format = msg_unpack(&rxFrame, &msgNames[index].pack, &value);
         if(format != MSG_NULL){
-          if(found) sprintf(str + strlen(str), ",\t");
+          if(found) sprintf(str + strlen(str), ", \t");
           found++;
           sprintf(str + strlen(str), "%s=%d", msgNames[index].name, value);
         }
