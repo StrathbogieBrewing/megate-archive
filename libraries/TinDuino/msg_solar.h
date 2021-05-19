@@ -3,6 +3,11 @@
 
 #include "msg.h"
 
+#define LOG_CRCE {0x00, 0, 16, MSG_UNIT}
+#define LOG_SEQE {0x00, 16, 16, MSG_UNIT}
+#define LOG_OVRE {0x00, 32, 16, MSG_UNIT}
+#define LOG_MSGE {0x00, 48, 16, MSG_UNIT}
+
 #define BMS_VBAT {0x80, 0, 16, MSG_MILLI}
 #define BMS_VTRG {0x80, 16, 16, MSG_MILLI}
 #define BMS_IBAT {0x80, 32, 16, MSG_CENTI}

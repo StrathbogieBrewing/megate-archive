@@ -33,6 +33,8 @@ typedef struct {
 void msg_pack(tinbus_frame_t *frame, msg_pack_t *pack, int value);
 int msg_unpack(tinbus_frame_t *frame, const msg_pack_t *pack, int *value);
 
+int msg_format(tinbus_frame_t *frame, const msg_pack_t *pack, char *str);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

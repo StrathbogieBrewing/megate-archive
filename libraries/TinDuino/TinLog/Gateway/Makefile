@@ -12,7 +12,7 @@ EXTDIR     = ext
 
 # include directories
 INCLUDE    = -I../ -I../../
-VPATH      = ../../ ../ 
+VPATH      = ../../ ../
 
 CFLAGS     = -DBUILD="$(BUILD)" -DPROGRAM="$(PROGRAM)" $(INCLUDE) -g
 
@@ -29,8 +29,7 @@ TARGET	= pi@raspberrypi:software
 #TARGET	= pi@plw:software/monitor
 
 upload:
-	rsync -r ../ $(TARGET)/$(PROGRAM)
-	# rsync Makefile $(TARGET)/$(PROGRAM)
+	rsync -r ../../ $(TARGET)/Tinduino
 
 dir:
 	mkdir -p $(BUILDDIR)
@@ -41,13 +40,6 @@ $(BUILDDIR)/%.o : %.c
 $(BUILDDIR)/$(PROGRAM): $(OBJS)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) -o $(BUILDDIR)/$(PROGRAM)
 	rm $(BUILDDIR)/*.o
-#	rm *.o
-#	rm ../common/*.o
-#	mv $(BUILDDIR)/$(PROGRAM) ../arduino/hardware/yellowbox/avr/tools/
-#	git commit -m "Build $(PROGRAM) - $(BUILD)" -a
-#	git push origin master
-#  bin/readlog test.html /dev/ttyUSB0
-
 
 # clean files
 clean:

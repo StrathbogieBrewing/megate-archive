@@ -14,6 +14,16 @@
 msg_name_t msgNames[] = MSG_NAMES;
 #define msgCount (sizeof(msgNames) / sizeof(msg_name_t))
 
+static int crcErrorCount = 0;
+static int overunErrorCount = 0;
+static int sequenceErrorCount = 0;
+static int messageErrorCount = 0;
+
+msg_pack_t crcError = LOG_CRCE;
+msg_pack_t overunError = LOG_SEQE;
+msg_pack_t sequenceError = LOG_OVRE;
+msg_pack_t messageError = LOG_MSGE;
+
 #define kProgramName (0)
 #define kSerialDevice (1)
 
@@ -32,6 +42,19 @@ void sendUDP(char *data, int size) {
              sizeof(si_other)) == -1) {
     fprintf(stderr, "UDP Socket send failed\n");
   }
+}
+
+int log_msg(tinbus_frame_t *frame){
+  return 0;
+}
+
+void logError(void){
+  tinbus_frame_t errorFrame;
+  msg_pack(&errorFrame, &crcError, crcErrorCount);
+  msg_pack(&errorFrame, &overunError, overunErrorCount);
+  msg_pack(&errorFrame, &sequenceError, sequenceErrorCount);
+  msg_pack(&errorFrame, &messageError, messageErrorCount);
+  log_msg(&errorFrame);
 }
 
 int main(int argc, char *argv[]) {
@@ -62,40 +85,52 @@ int main(int argc, char *argv[]) {
   si_other.sin_port = htons(kUDPPort);
   si_other.sin_addr.s_addr = htonl(INADDR_BROADCAST);
 
+  unsigned char sequence = 0;
   while (keepRunning) {
     tinbus_frame_t rxFrame;
     int result = tinux_read(&rxFrame);
     if (result == tinbus_kOK) {
 
-      // char str[kBufferSize] = {0};
-      // unsigned char *frame = (unsigned char *)&rxFrame;
-      // sprintf(str + strlen(str), "RX Data : > ");
-      // unsigned char index = 0;
-      // while (index++ < tinbus_kFrameSize) {
-      //   sprintf(str + strlen(str), "0x%2.2X ", *frame++);
-      // }
-      // sprintf(str + strlen(str), "<\n");
-
       char str[kBufferSize] = {0};
-      sprintf(str, "Message : 0x%2.2X\tSequence : %u\t", rxFrame.msgID, rxFrame.sequence);
+      sprintf(str + strlen(str), "msg : 0x%2.2X\tseq : %u\t",
+              rxFrame.msgID, rxFrame.sequence);
       int found = 0;
       int index = 0;
-      while(index < msgCount){
+      while (index < msgCount) {
         int value;
         int format = msg_unpack(&rxFrame, &msgNames[index].pack, &value);
-        if(format != MSG_NULL){
-          if(found) sprintf(str + strlen(str), ", \t");
+        if (format != MSG_NULL) {
+          if (found)
+            sprintf(str + strlen(str), ", \t");
           found++;
-          sprintf(str + strlen(str), "%s=%d", msgNames[index].name, value);
+          char valueBuffer[kBufferSize] = {0};
+          msg_format(&rxFrame, &msgNames[index].pack, valueBuffer);
+          sprintf(str + strlen(str), "%s=%s", msgNames[index].name, valueBuffer);
         }
         index++;
       }
       sprintf(str + strlen(str), "\n");
-
       printf("%s", str);
-      // sendUDP((char*)&rxFrame, tinbus_kFrameSize);
-    } else {
-      printf("Error : %d\n", result);
+
+      if(found == 0){
+        messageErrorCount++;
+        logError();
+      }
+
+      sendUDP((char *)&rxFrame, tinbus_kFrameSize);
+      
+      log_msg(&rxFrame);
+      if (rxFrame.sequence != (unsigned char)(sequence + 1)) {
+        sequenceErrorCount++;
+        logError();
+      }
+      sequence = rxFrame.sequence;
+    } else if (result == tinbus_kReadCRCError) {
+      crcErrorCount++;
+      logError();
+    } else if (result == tinbus_kReadOverunError) {
+      overunErrorCount++;
+      logError();
     }
   }
 
@@ -106,6 +141,16 @@ int main(int argc, char *argv[]) {
 
   return EXIT_SUCCESS;
 }
+
+// char str[kBufferSize] = {0};
+// unsigned char *frame = (unsigned char *)&rxFrame;
+// sprintf(str + strlen(str), "RX Data : > ");
+// unsigned char index = 0;
+// while (index++ < tinbus_kFrameSize) {
+//   sprintf(str + strlen(str), "0x%2.2X ", *frame++);
+// }
+// sprintf(str + strlen(str), "<\n");
+// printf("%s", str);
 
 // char str[kBufferSize] = {0};
 // int index = 0;
@@ -120,7 +165,6 @@ int main(int argc, char *argv[]) {
 // }
 // strcat(str, "\n");
 // sendUDP(str);
-
 
 // unsigned char index = 0;
 // unsigned char *frame = (unsigned char *)&rxFrame;
