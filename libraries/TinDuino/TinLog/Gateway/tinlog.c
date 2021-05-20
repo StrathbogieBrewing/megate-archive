@@ -9,6 +9,7 @@
 #include <time.h>
 
 #include "tinux.h"
+#include "log.h"
 
 #include "msg_solar.h"
 msg_name_t msgNames[] = MSG_NAMES;
@@ -26,27 +27,28 @@ msg_pack_t messageError = LOG_MSGE;
 
 #define kProgramName (0)
 #define kSerialDevice (1)
+#define kLogPath (2)
 
-#define kUDPPort (12345)
+// #define kUDPPort (12345)
 
 #define kBufferSize (256)
 
 static volatile int keepRunning = 1;
 void intHandler(int dummy) { keepRunning = 0; }
 
-struct sockaddr_in si_other;
-int s, i;
+// struct sockaddr_in si_other;
+// int s, i;
 
-void sendUDP(char *data, int size) {
-  if (sendto(s, data, size, 0, (struct sockaddr *)&si_other,
-             sizeof(si_other)) == -1) {
-    fprintf(stderr, "UDP Socket send failed\n");
-  }
-}
+// void sendUDP(char *data, int size) {
+//   if (sendto(s, data, size, 0, (struct sockaddr *)&si_other,
+//              sizeof(si_other)) == -1) {
+//     fprintf(stderr, "UDP Socket send failed\n");
+//   }
+// }
 
-int log_msg(tinbus_frame_t *frame){
-  return 0;
-}
+// int log_msg(tinbus_frame_t *frame){
+//   return 0;
+// }
 
 void logError(void){
   tinbus_frame_t errorFrame;
@@ -54,12 +56,12 @@ void logError(void){
   msg_pack(&errorFrame, &overunError, overunErrorCount);
   msg_pack(&errorFrame, &sequenceError, sequenceErrorCount);
   msg_pack(&errorFrame, &messageError, messageErrorCount);
-  log_msg(&errorFrame);
+  log_commit(&errorFrame);
 }
 
 int main(int argc, char *argv[]) {
-  if (argc < 2) {
-    fprintf(stdout, "Usage: %s <serial device>\n", argv[kProgramName]);
+  if (argc < 3) {
+    fprintf(stdout, "Usage: %s <serial device> <log path>\n", argv[kProgramName]);
     return EXIT_FAILURE;
   }
 
@@ -67,23 +69,25 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-  // initialise udp port
-  if ((s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
-    fprintf(stderr, "UDP Socket could not be opened\n");
-    return EXIT_FAILURE;
-  }
+  log_begin(argv[kLogPath]);
 
-  int yes = 1;
-  if (setsockopt(s, SOL_SOCKET, SO_BROADCAST, (char *)&yes, sizeof(yes)) ==
-      -1) {
-    fprintf(stderr, "UDP Socket could not set options\n");
-    return EXIT_FAILURE;
-  }
-
-  memset((char *)&si_other, 0, sizeof(si_other));
-  si_other.sin_family = AF_INET;
-  si_other.sin_port = htons(kUDPPort);
-  si_other.sin_addr.s_addr = htonl(INADDR_BROADCAST);
+  // // initialise udp port
+  // if ((s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
+  //   fprintf(stderr, "UDP Socket could not be opened\n");
+  //   return EXIT_FAILURE;
+  // }
+  //
+  // int yes = 1;
+  // if (setsockopt(s, SOL_SOCKET, SO_BROADCAST, (char *)&yes, sizeof(yes)) ==
+  //     -1) {
+  //   fprintf(stderr, "UDP Socket could not set options\n");
+  //   return EXIT_FAILURE;
+  // }
+  //
+  // memset((char *)&si_other, 0, sizeof(si_other));
+  // si_other.sin_family = AF_INET;
+  // si_other.sin_port = htons(kUDPPort);
+  // si_other.sin_addr.s_addr = htonl(INADDR_BROADCAST);
 
   unsigned char sequence = 0;
   while (keepRunning) {
@@ -117,9 +121,9 @@ int main(int argc, char *argv[]) {
         logError();
       }
 
-      sendUDP((char *)&rxFrame, tinbus_kFrameSize);
-      
-      log_msg(&rxFrame);
+      // sendUDP((char *)&rxFrame, tinbus_kFrameSize);
+
+      log_commit(&rxFrame);
       if (rxFrame.sequence != (unsigned char)(sequence + 1)) {
         sequenceErrorCount++;
         logError();
@@ -136,7 +140,8 @@ int main(int argc, char *argv[]) {
 
   // teardown ports
   tinux_close();
-  close(s);
+  // close(s);
+  log_end();
   fprintf(stdout, "Exit\n");
 
   return EXIT_SUCCESS;

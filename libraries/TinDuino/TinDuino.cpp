@@ -6,7 +6,6 @@
 #define kTXRequest (tinbus_kFrameSize + 1)
 #define kTXIdle (tinbus_kFrameSize + 2)
 
-
 TinDuino::TinDuino(HardwareSerial &serial, unsigned char interruptPin)
     : serialPort{serial}, rxInterruptPin{interruptPin} {}
 
@@ -36,7 +35,7 @@ int TinDuino::update() {
       txIndex = 0;
       unsigned char txData = ((char *)&txFrame)[txIndex];
       serialPort.write(txData);
-      // imediately update rxActiveMicros
+      // immediately update rxActiveMicros
       noInterrupts();
       rxActiveMicros = micros();
       interrupts();
@@ -98,14 +97,10 @@ int TinDuino::write(tinbus_frame_t *frame) {
   if (txIndex != kTXIdle) {
     return tinbus_kWriteBusy;
   }
-
-  frame->start = 0;
-  // set sequence number
-  frame->sequence = ++sequence;
-  // calculate and set crc
-  unsigned char crc = tinbus_crcFrame(frame);
-  frame->crc = crc;
-
+  frame->start = 0;  // set start byte
+  frame->sequence = ++sequence;  // set sequence number
+  unsigned char crc = tinbus_crcFrame(frame);  // calculate crc
+  frame->crc = crc; // set crc
   memcpy(&txFrame, frame, tinbus_kFrameSize);
   txIndex = kTXRequest;
   return tinbus_kOK;
