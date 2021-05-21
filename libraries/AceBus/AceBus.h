@@ -4,7 +4,6 @@
 #include "Arduino.h"
 #include "tinframe.h"
 
-
 #define AceBus_kBaud (1200UL)
 #define AceBus_kBitPeriodMicros (1000000UL / AceBus_kBaud)
 #define AceBus_kInterFrameMicros (AceBus_kBitPeriodMicros * 15)
