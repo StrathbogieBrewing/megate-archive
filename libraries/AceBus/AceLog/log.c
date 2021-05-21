@@ -10,17 +10,11 @@
 #include "log.h"
 #include "mkdir.h"
 
-// #include "msg_solar.h"
-// msg_name_t msgNames[] = MSG_NAMES;
-// #define msgCount (sizeof(msgNames) / sizeof(msg_name_t))
-
 // maximum log record string
 #define kMaxStrLen (1024)
 
 // maximum log file buffer size
 #define kLogBufferSize (1048576)
-
-#define kMaxQueryCount (16)
 
 typedef struct {
   uint32_t timestamp;
@@ -63,7 +57,6 @@ void writeToDisk(time_t tv_secs) {
   if (fd != NULL) {
     fwrite(logBuffer, sizeof(log_t), logBufferIndex, fd);
     fclose(fd);
-    // printf("Appended log to file %s\n", destination);
     logBufferIndex = 0;
   }
 }

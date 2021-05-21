@@ -119,9 +119,9 @@ int msg_format(tinframe_t *frame, const msg_pack_t *pack, char *str) {
     _itoa(str, MSG_TWODIGITS, value);
   } else if (format == MSG_BOOL) {
     if (value)
-      strcpy(str, "on");
+      strcpy(str, "On");
     else
-      strcpy(str, "off");
+      strcpy(str, "Off");
   } else {
     _itoa(str, format, value);
   }

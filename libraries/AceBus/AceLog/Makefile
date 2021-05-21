@@ -11,8 +11,8 @@ SOURCEDIR  = src
 EXTDIR     = ext
 
 # include directories
-INCLUDE    = -I../ -I../../
-VPATH      = ../../ ../
+INCLUDE    = -I../src -I../../
+VPATH      = ../../ ../src
 
 CFLAGS     = -DBUILD="$(BUILD)" -DPROGRAM="$(PROGRAM)" $(INCLUDE) -g
 

@@ -1,6 +1,6 @@
 #include <stdbool.h>
 
-#ifndef __AVR_ARCH__
+#ifndef __AVR__
 #define PROGMEM
 #define getByte(base, offset) base[offset]
 #else
@@ -10,6 +10,7 @@
 
 #include "tinframe.h"
 
+// CRC-8 uses DVB-S2 polynomial
 // ./pycrc.py --width 8 --poly 0xd5 --xor-in 0x00 --xor-out 0x00
 // --reflect-out false --reflect-in false --algorithm bbf --generate c -o crc.c
 
@@ -39,10 +40,9 @@ static const unsigned char crc_table[256] PROGMEM = {
 
 unsigned char tinframe_crcByte(unsigned char crc, unsigned char data) {
   unsigned char tbl_idx = crc ^ data;
-  return getByte(crc_table, tbl_idx); // pgm_read_byte(crc_table + tbl_idx);
+  return getByte(crc_table, tbl_idx);
 }
 
-// CRC-8 uses DVB-S2 polynomial
 // unsigned char tinframe_crcByte(unsigned char crc, unsigned char data) {
 //   unsigned char i;
 //   for (i = 0x80; i > 0; i >>= 1) {
@@ -52,16 +52,6 @@ unsigned char tinframe_crcByte(unsigned char crc, unsigned char data) {
 //     crc <<= 1;
 //     if (bit)
 //       crc ^= 0xd5;
-//   }
-//   return crc;
-// }
-
-// unsigned char tinframe_crcFrame(const tinframe_t *frame) {
-//   unsigned char crc = 0;
-//   unsigned const char *data = (unsigned char *)frame + 1; // no crc on start
-//   unsigned char bytes = tinframe_kFrameSize - 2;            // or on crc
-//   itself while (bytes--) {
-//     crc = tinframe_crcByte(crc, *data++);
 //   }
 //   return crc;
 // }
