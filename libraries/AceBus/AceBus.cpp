@@ -16,10 +16,16 @@ void AceBus::externalInterrupt(void) { rxActiveMicros = micros(); }
 void AceBus::begin() {
   serialPort.begin(AceBus_kBaud);
   pinMode(rxInterruptPin, INPUT);
-  attachInterrupt(digitalPinToInterrupt(rxInterruptPin),
-                  externalInterrupt, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(rxInterruptPin), externalInterrupt,
+                  CHANGE);
   rxIndex = kRXDone;
   txIndex = kTXIdle;
+  txPriority = 0;
+}
+
+void AceBus::setPriority(unsigned char priority) {
+  txPriority = AceBus_kInterFrameMicros +
+               ((unsigned int)(priority & 0x07) * AceBus_kBitPeriodMicros);
 }
 
 int AceBus::update() {
@@ -31,19 +37,20 @@ int AceBus::update() {
     while (serialPort.available() > 0) {
       serialPort.read();
     }
-    if (txIndex == kTXRequest) {
-      txIndex = 0;
-      unsigned char txData = ((char *)&txFrame)[txIndex];
-      serialPort.write(txData);
-      noInterrupts();
-      rxActiveMicros = micros();  // immediately update rxActiveMicros
-      interrupts();
-      return AceBus_kWriteBusy;
-    } else {
-      txIndex = kTXIdle;
+    if (lastActivity > txPriority) {
+      if (txIndex == kTXRequest) {
+        txIndex = 0;
+        unsigned char txData = ((char *)&txFrame)[txIndex];
+        serialPort.write(txData);
+        noInterrupts();
+        rxActiveMicros = micros(); // immediately update rxActiveMicros
+        interrupts();
+        return AceBus_kWriteBusy;
+      } else {
+        txIndex = kTXIdle;
+      }
     }
   }
-
   if (txIndex < tinframe_kFrameSize) {
     unsigned char txData = ((char *)&txFrame)[txIndex];
     if (serialPort.available() > 0) {
@@ -75,15 +82,8 @@ int AceBus::update() {
     }
     if (rxIndex == tinframe_kFrameSize) {
       if (tinframe_checkFrame(&rxFrame) == tinframe_kOK) {
-      // if (rxFrame.crc == tinframe_crcFrame(&rxFrame)) {
-        // unsigned char expectedSequence = sequence + 1;
-        // sequence = rxFrame.sequence;
         rxIndex = kRXDataReady;
-        // if (sequence == expectedSequence) {
         return AceBus_kReadDataReady;
-        // } else {
-        //   return AceBus_kReadSequenceError;
-        // }
       } else {
         rxIndex = kRXDone;
         return AceBus_kReadCRCError;
@@ -98,10 +98,6 @@ int AceBus::write(tinframe_t *frame) {
     return AceBus_kWriteBusy;
   }
   tinframe_prepareFrame(frame);
-  // frame->start = tinframe_kStart;                // set start byte
-  // // frame->sequence = ++sequence;             // set sequence number
-  // unsigned char crc = tinframe_crcFrame(frame);  // calculate crc
-  // frame->crc = crc;                            // set crc
   memcpy(&txFrame, frame, tinframe_kFrameSize);
   txIndex = kTXRequest;
   return AceBus_kOK;

@@ -78,7 +78,6 @@ int tinux_read(tinframe_t *rxFrame) {
         *data++ = ringBuffer[rxIndex++];
       }
       // check crc
-      // unsigned char crc = tinframe_crcFrame(rxFrame);
       if(tinframe_checkFrame(rxFrame) == tinframe_kOK){
         rxTail = rxIndex;
         return tinux_kOK;

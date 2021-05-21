@@ -4,8 +4,10 @@
 #include "Arduino.h"
 #include "tinframe.h"
 
-#define AceBus_kInterFrameMicros (12500L)
-#define AceBus_kBaud (1200)
+
+#define AceBus_kBaud (1200UL)
+#define AceBus_kBitPeriodMicros (1000000UL / AceBus_kBaud)
+#define AceBus_kInterFrameMicros (AceBus_kBitPeriodMicros * 15)
 
 enum {
   AceBus_kOK = 0,
@@ -27,12 +29,13 @@ public:
   int update();
   int write(tinframe_t* frame);
   int read(tinframe_t* frame);
+  void setPriority(unsigned char priority);
 
 private:
   HardwareSerial &serialPort;
   unsigned char rxInterruptPin;
 
-  // unsigned char sequence;
+  unsigned int txPriority;
   tinframe_t txFrame;
   unsigned char txIndex;
   tinframe_t rxFrame;
