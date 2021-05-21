@@ -108,7 +108,6 @@ int _itoa(char *str, unsigned char format, int value) {
 int msg_format(tinframe_t *frame, const msg_pack_t *pack, char *str) {
   int value;
   unsigned char format = msg_unpack(frame, pack, &value);
-
   if (format == MSG_TIME) {
     int hours = 0;
     while (value >= 60) {

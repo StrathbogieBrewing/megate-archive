@@ -5,10 +5,18 @@
 extern "C" {
 #endif
 
-#include "tinbus.h"
+#include "tinframe.h"
+
+enum{
+tinux_kOK = 0,
+tinux_kReadNoData,
+tinux_kReadCRCError,
+tinux_kReadOverunError,
+};
+
 
 int tinux_open(char *port);
-int tinux_read(tinbus_frame_t *rxFrame);
+int tinux_read(tinframe_t *rxFrame);
 void tinux_close(void);
 
 #ifdef __cplusplus

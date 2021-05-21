@@ -1,4 +1,4 @@
-#include "TinDuino.h"
+#include "AceBus.h"
 
 #define kRXDataReady (tinframe_kFrameSize + 1)
 #define kRXDone (tinframe_kFrameSize + 2)
@@ -6,15 +6,15 @@
 #define kTXRequest (tinframe_kFrameSize + 1)
 #define kTXIdle (tinframe_kFrameSize + 2)
 
-TinDuino::TinDuino(HardwareSerial &serial, unsigned char interruptPin)
+AceBus::AceBus(HardwareSerial &serial, unsigned char interruptPin)
     : serialPort{serial}, rxInterruptPin{interruptPin} {}
 
-volatile unsigned long TinDuino::rxActiveMicros = 0;
+volatile unsigned long AceBus::rxActiveMicros = 0;
 
-void TinDuino::externalInterrupt(void) { rxActiveMicros = micros(); }
+void AceBus::externalInterrupt(void) { rxActiveMicros = micros(); }
 
-void TinDuino::begin() {
-  serialPort.begin(TinDuino_kBaud);
+void AceBus::begin() {
+  serialPort.begin(AceBus_kBaud);
   pinMode(rxInterruptPin, INPUT);
   attachInterrupt(digitalPinToInterrupt(rxInterruptPin),
                   externalInterrupt, CHANGE);
@@ -22,11 +22,11 @@ void TinDuino::begin() {
   txIndex = kTXIdle;
 }
 
-int TinDuino::update() {
+int AceBus::update() {
   noInterrupts();
   unsigned long lastActivity = micros() - rxActiveMicros;
   interrupts();
-  if (lastActivity > TinDuino_kInterFrameMicros) {
+  if (lastActivity > AceBus_kInterFrameMicros) {
     rxIndex = 0;
     while (serialPort.available() > 0) {
       serialPort.read();
@@ -35,11 +35,10 @@ int TinDuino::update() {
       txIndex = 0;
       unsigned char txData = ((char *)&txFrame)[txIndex];
       serialPort.write(txData);
-      // immediately update rxActiveMicros
       noInterrupts();
-      rxActiveMicros = micros();
+      rxActiveMicros = micros();  // immediately update rxActiveMicros
       interrupts();
-      return TinDuino_kWriteBusy;
+      return AceBus_kWriteBusy;
     } else {
       txIndex = kTXIdle;
     }
@@ -54,17 +53,17 @@ int TinDuino::update() {
         if (txIndex < tinframe_kFrameSize) {
           txData = ((char *)&txFrame)[txIndex];
           serialPort.write(txData);
-          return TinDuino_kWriteBusy;
+          return AceBus_kWriteBusy;
         } else {
           txIndex = kTXIdle;
-          return TinDuino_kWriteComplete;
+          return AceBus_kWriteComplete;
         }
       } else {
         txIndex = kTXIdle;
-        return TinDuino_kWriteCollision;
+        return AceBus_kWriteCollision;
       }
     }
-    return TinDuino_kWriteBusy;
+    return AceBus_kWriteBusy;
   }
 
   if (serialPort.available() > 0) {
@@ -72,7 +71,7 @@ int TinDuino::update() {
     if (rxIndex < tinframe_kFrameSize) {
       ((char *)&rxFrame)[rxIndex++] = rxData;
     } else {
-      return TinDuino_kReadOverunError;
+      return AceBus_kReadOverunError;
     }
     if (rxIndex == tinframe_kFrameSize) {
       if (tinframe_checkFrame(&rxFrame) == tinframe_kOK) {
@@ -81,22 +80,22 @@ int TinDuino::update() {
         // sequence = rxFrame.sequence;
         rxIndex = kRXDataReady;
         // if (sequence == expectedSequence) {
-        return TinDuino_kOK;
+        return AceBus_kReadDataReady;
         // } else {
-        //   return TinDuino_kReadSequenceError;
+        //   return AceBus_kReadSequenceError;
         // }
       } else {
         rxIndex = kRXDone;
-        return TinDuino_kReadCRCError;
+        return AceBus_kReadCRCError;
       }
     }
   }
-  return TinDuino_kReadNoData;
+  return AceBus_kReadNoData;
 }
 
-int TinDuino::write(tinframe_t *frame) {
+int AceBus::write(tinframe_t *frame) {
   if (txIndex != kTXIdle) {
-    return TinDuino_kWriteBusy;
+    return AceBus_kWriteBusy;
   }
   tinframe_prepareFrame(frame);
   // frame->start = tinframe_kStart;                // set start byte
@@ -105,14 +104,14 @@ int TinDuino::write(tinframe_t *frame) {
   // frame->crc = crc;                            // set crc
   memcpy(&txFrame, frame, tinframe_kFrameSize);
   txIndex = kTXRequest;
-  return TinDuino_kOK;
+  return AceBus_kOK;
 }
 
-int TinDuino::read(tinframe_t *frame) {
+int AceBus::read(tinframe_t *frame) {
   if (rxIndex == kRXDataReady) {
     memcpy(frame, &rxFrame, tinframe_kFrameSize);
     rxIndex = kRXDone;
-    return TinDuino_kOK;
+    return AceBus_kOK;
   }
-  return TinDuino_kReadNoData;
+  return AceBus_kReadNoData;
 }

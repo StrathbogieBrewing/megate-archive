@@ -3,7 +3,7 @@
 #include <limits.h>
 
 #include "mcp2515.h"
-#include "TinDuino.h"
+#include "AceBus.h"
 #include "msg_solar.h"
 
 msg_pack_t vbat = BMS_VBAT;
@@ -25,16 +25,16 @@ msg_pack_t btc1 = BMS_BTC1;
 msg_pack_t btc2 = BMS_BTC2;
 
 #define kInterruptPin (2)
-TinDuino tinDuino(Serial, kInterruptPin);
+AceBus aceBus(Serial, kInterruptPin);
 
 unsigned char frameSequence = 0;
+bool heartBeat = false;
 
 struct can_frame canMsg;
 MCP2515 mcp2515(6);
 
 const int buzzerPin = 9;
 const int ledPin = 5;
-
 
 #define CANBUS_CAN_ID_SHUNT 40
 #define CANBUS_CAN_ID_BMS 300
@@ -47,6 +47,11 @@ typedef struct {
 } bms_t;
 
 static bms_t bms;
+
+void writeFrame(tinframe_t* frame){
+  frame->data[MSG_SEQ] = frameSequence;
+  aceBus.write(frame);
+}
 
 void process(void) {
   // called 4 times per second, triggered by current shunt canbus message
@@ -91,14 +96,12 @@ void process(void) {
   int16_t chargeCentiAmps = bms.chargeMilliAmps / 10;
 
   tinframe_t txFrame;
-  // always send battery voltage and current
-  msg_pack(&txFrame, &vbat, cellSum);
+  msg_pack(&txFrame, &vbat, cellSum);  // send battery voltage and current
   msg_pack(&txFrame, &ibat, chargeCentiAmps);
   msg_pack(&txFrame, &vtrg, 26700);
   msg_pack(&txFrame, &itrg, 2000);
-  txFrame.data[MSG_SEQ] = 0;
-  tinDuino.write(&txFrame);
-  frameSequence = txFrame.data[MSG_SEQ];
+  writeFrame(&txFrame);
+  heartBeat = true;
 }
 
 void setup() {
@@ -106,7 +109,7 @@ void setup() {
   wdt_reset();
   wdt_enable(WDTO_1S);
 
-  tinDuino.begin();
+  aceBus.begin();
 
   SPI.begin();
 
@@ -118,34 +121,44 @@ void setup() {
   mcp2515.setNormalMode();
 }
 
-#define SCHEDMSK (0xFE)
+#define SCHEDMSK (0x0E)
 
 void loop() {
   // update bus
-  if(tinDuino.update() == TinDuino_kWriteComplete){
+  int status = aceBus.update();
+  if(status == AceBus_kWriteComplete){
+    frameSequence++;
     // send other parameters when sequence number matches message ID
-    tinframe_t txFrame;
-    if((frameSequence & SCHEDMSK) == (cel1.msgID & SCHEDMSK)){
-      msg_pack(&txFrame, &cel1, bms.cellVoltage[0]);
-      msg_pack(&txFrame, &cel2, bms.cellVoltage[1]);
-      msg_pack(&txFrame, &cel3, bms.cellVoltage[2]);
-      msg_pack(&txFrame, &cel4, bms.cellVoltage[3]);
-      tinDuino.write(&txFrame);
-    } else if((frameSequence & SCHEDMSK) == (cel5.msgID & SCHEDMSK)){
-      msg_pack(&txFrame, &cel5, bms.cellVoltage[4]);
-      msg_pack(&txFrame, &cel6, bms.cellVoltage[5]);
-      msg_pack(&txFrame, &cel7, bms.cellVoltage[6]);
-      msg_pack(&txFrame, &cel8, bms.cellVoltage[7]);
-      tinDuino.write(&txFrame);
-    } else if((frameSequence & SCHEDMSK) == (vbal.msgID & SCHEDMSK)){
-      msg_pack(&txFrame, &vbal, bms.balanceVoltage);
-      msg_pack(&txFrame, &chah, bms.cellVoltage[1]);
-      msg_pack(&txFrame, &btc1, bms.temperature[0]);
-      msg_pack(&txFrame, &btc2, bms.temperature[1]);
-      tinDuino.write(&txFrame);
+    if(heartBeat){
+      heartBeat = false;
+      tinframe_t txFrame;
+      if((frameSequence & SCHEDMSK) == (cel1.msgID & SCHEDMSK)){
+        msg_pack(&txFrame, &cel1, bms.cellVoltage[0]);
+        msg_pack(&txFrame, &cel2, bms.cellVoltage[1]);
+        msg_pack(&txFrame, &cel3, bms.cellVoltage[2]);
+        msg_pack(&txFrame, &cel4, bms.cellVoltage[3]);
+        writeFrame(&txFrame);
+      } else if((frameSequence & SCHEDMSK) == (cel5.msgID & SCHEDMSK)){
+        msg_pack(&txFrame, &cel5, bms.cellVoltage[4]);
+        msg_pack(&txFrame, &cel6, bms.cellVoltage[5]);
+        msg_pack(&txFrame, &cel7, bms.cellVoltage[6]);
+        msg_pack(&txFrame, &cel8, bms.cellVoltage[7]);
+        writeFrame(&txFrame);
+      } else if((frameSequence & SCHEDMSK) == (vbal.msgID & SCHEDMSK)){
+        msg_pack(&txFrame, &vbal, bms.balanceVoltage);
+        msg_pack(&txFrame, &chah, bms.cellVoltage[1]);
+        msg_pack(&txFrame, &btc1, bms.temperature[0]);
+        msg_pack(&txFrame, &btc2, bms.temperature[1]);
+        writeFrame(&txFrame);
+      }
     }
-    frameSequence = 0;
-  };
+  } else if(status == AceBus_kReadDataReady){
+    tinframe_t rxFrame;
+    int status = aceBus.read(&rxFrame);
+    if(status == AceBus_kOK){
+      frameSequence = rxFrame.data[MSG_SEQ] + 1;
+    }
+  }
 
   if (mcp2515.readMessage(&canMsg) == MCP2515::ERROR_OK) {
     if (canMsg.can_id == (CANBUS_CAN_ID_SHUNT | CAN_EFF_FLAG)) {

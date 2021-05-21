@@ -51,7 +51,7 @@ void intHandler(int dummy) { keepRunning = 0; }
 // }
 
 void logError(void){
-  tinbus_frame_t errorFrame;
+  tinframe_t errorFrame;
   msg_pack(&errorFrame, &crcError, crcErrorCount);
   msg_pack(&errorFrame, &overunError, overunErrorCount);
   msg_pack(&errorFrame, &sequenceError, sequenceErrorCount);
@@ -91,13 +91,13 @@ int main(int argc, char *argv[]) {
 
   unsigned char sequence = 0;
   while (keepRunning) {
-    tinbus_frame_t rxFrame;
+    tinframe_t rxFrame;
     int result = tinux_read(&rxFrame);
-    if (result == tinbus_kOK) {
+    if (result == tinux_kOK) {
 
       char str[kBufferSize] = {0};
-      sprintf(str + strlen(str), "msg : 0x%2.2X\tseq : %u\t",
-              rxFrame.msgID, rxFrame.sequence);
+      sprintf(str + strlen(str), "msg : 0x%2.2X\tseq : %u  \t",
+              rxFrame.data[MSG_ID], rxFrame.data[MSG_SEQ]);
       int found = 0;
       int index = 0;
       while (index < msgCount) {
@@ -124,15 +124,15 @@ int main(int argc, char *argv[]) {
       // sendUDP((char *)&rxFrame, tinbus_kFrameSize);
 
       log_commit(&rxFrame);
-      if (rxFrame.sequence != (unsigned char)(sequence + 1)) {
+      if (rxFrame.data[MSG_SEQ] != (unsigned char)(sequence + 1)) {
         sequenceErrorCount++;
         logError();
       }
-      sequence = rxFrame.sequence;
-    } else if (result == tinbus_kReadCRCError) {
+      sequence = rxFrame.data[MSG_SEQ];
+    } else if (result == tinux_kReadCRCError) {
       crcErrorCount++;
       logError();
-    } else if (result == tinbus_kReadOverunError) {
+    } else if (result == tinux_kReadOverunError) {
       overunErrorCount++;
       logError();
     }

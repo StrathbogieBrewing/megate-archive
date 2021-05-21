@@ -4,7 +4,7 @@ PROGRAM    = tinlog
 
 BUILD       = $(shell date +'%y%m%d%H%M')
 
-CSRC       = tinlog.c tinbus.c tinux.c msg.c log.c mkdir.c
+CSRC       = tinlog.c tinframe.c tinux.c msg.c log.c mkdir.c
 
 BUILDDIR   = bin
 SOURCEDIR  = src

@@ -24,7 +24,7 @@
 
 typedef struct {
   uint32_t timestamp;
-  tinbus_frame_t frame;
+  tinframe_t frame;
 } log_t;
 
 static log_t logBuffer[kLogBufferSize];
@@ -85,7 +85,7 @@ static inline void appendToLogBuffer(log_t *log) {
     logBufferIndex--;
 }
 
-void log_commit(tinbus_frame_t* frame) {
+void log_commit(tinframe_t* frame) {
   // get millisecond timestamp for this log commit
   struct timeval tv;
   gettimeofday(&tv, NULL);
@@ -104,7 +104,7 @@ void log_commit(tinbus_frame_t* frame) {
 
   log_t log;  // add timestamp to frame and append to log
   log.timestamp = htonl(millisNow);
-  memcpy(&log.frame, frame, tinbus_kFrameSize);
+  memcpy(&log.frame, frame, tinframe_kFrameSize);
   appendToLogBuffer(&log);
 }
 
