@@ -1,10 +1,10 @@
 #include "TinDuino.h"
 
-#define kRXDataReady (tinbus_kFrameSize + 1)
-#define kRXDone (tinbus_kFrameSize + 2)
+#define kRXDataReady (tinframe_kFrameSize + 1)
+#define kRXDone (tinframe_kFrameSize + 2)
 
-#define kTXRequest (tinbus_kFrameSize + 1)
-#define kTXIdle (tinbus_kFrameSize + 2)
+#define kTXRequest (tinframe_kFrameSize + 1)
+#define kTXIdle (tinframe_kFrameSize + 2)
 
 TinDuino::TinDuino(HardwareSerial &serial, unsigned char interruptPin)
     : serialPort{serial}, rxInterruptPin{interruptPin} {}
@@ -39,78 +39,80 @@ int TinDuino::update() {
       noInterrupts();
       rxActiveMicros = micros();
       interrupts();
-      return tinbus_kWriteBusy;
+      return TinDuino_kWriteBusy;
     } else {
       txIndex = kTXIdle;
     }
   }
 
-  if (txIndex < tinbus_kFrameSize) {
+  if (txIndex < tinframe_kFrameSize) {
     unsigned char txData = ((char *)&txFrame)[txIndex];
     if (serialPort.available() > 0) {
       unsigned char rxData = serialPort.read();
       if (rxData == txData) {
         ++txIndex;
-        if (txIndex < tinbus_kFrameSize) {
+        if (txIndex < tinframe_kFrameSize) {
           txData = ((char *)&txFrame)[txIndex];
           serialPort.write(txData);
-          return tinbus_kWriteBusy;
+          return TinDuino_kWriteBusy;
         } else {
           txIndex = kTXIdle;
-          return tinbus_kWriteComplete;
+          return TinDuino_kWriteComplete;
         }
       } else {
         txIndex = kTXIdle;
-        return tinbus_kWriteCollision;
+        return TinDuino_kWriteCollision;
       }
     }
-    return tinbus_kWriteBusy;
+    return TinDuino_kWriteBusy;
   }
 
   if (serialPort.available() > 0) {
     unsigned char rxData = serialPort.read();
-    if (rxIndex < tinbus_kFrameSize) {
+    if (rxIndex < tinframe_kFrameSize) {
       ((char *)&rxFrame)[rxIndex++] = rxData;
     } else {
-      return tinbus_kReadOverunError;
+      return TinDuino_kReadOverunError;
     }
-    if (rxIndex == tinbus_kFrameSize) {
-      if (rxFrame.crc == tinbus_crcFrame(&rxFrame)) {
-        unsigned char expectedSequence = sequence + 1;
-        sequence = rxFrame.sequence;
+    if (rxIndex == tinframe_kFrameSize) {
+      if (tinframe_checkFrame(&rxFrame) == tinframe_kOK) {
+      // if (rxFrame.crc == tinframe_crcFrame(&rxFrame)) {
+        // unsigned char expectedSequence = sequence + 1;
+        // sequence = rxFrame.sequence;
         rxIndex = kRXDataReady;
-        if (sequence == expectedSequence) {
-          return tinbus_kOK;
-        } else {
-          return tinbus_kReadSequenceError;
-        }
+        // if (sequence == expectedSequence) {
+        return TinDuino_kOK;
+        // } else {
+        //   return TinDuino_kReadSequenceError;
+        // }
       } else {
         rxIndex = kRXDone;
-        return tinbus_kReadCRCError;
+        return TinDuino_kReadCRCError;
       }
     }
   }
-  return tinbus_kReadNoData;
+  return TinDuino_kReadNoData;
 }
 
-int TinDuino::write(tinbus_frame_t *frame) {
+int TinDuino::write(tinframe_t *frame) {
   if (txIndex != kTXIdle) {
-    return tinbus_kWriteBusy;
+    return TinDuino_kWriteBusy;
   }
-  frame->start = 0;  // set start byte
-  frame->sequence = ++sequence;  // set sequence number
-  unsigned char crc = tinbus_crcFrame(frame);  // calculate crc
-  frame->crc = crc; // set crc
-  memcpy(&txFrame, frame, tinbus_kFrameSize);
+  tinframe_prepareFrame(frame);
+  // frame->start = tinframe_kStart;                // set start byte
+  // // frame->sequence = ++sequence;             // set sequence number
+  // unsigned char crc = tinframe_crcFrame(frame);  // calculate crc
+  // frame->crc = crc;                            // set crc
+  memcpy(&txFrame, frame, tinframe_kFrameSize);
   txIndex = kTXRequest;
-  return tinbus_kOK;
+  return TinDuino_kOK;
 }
 
-int TinDuino::read(tinbus_frame_t *frame) {
+int TinDuino::read(tinframe_t *frame) {
   if (rxIndex == kRXDataReady) {
-    memcpy(frame, &rxFrame, tinbus_kFrameSize);
+    memcpy(frame, &rxFrame, tinframe_kFrameSize);
     rxIndex = kRXDone;
-    return tinbus_kOK;
+    return TinDuino_kOK;
   }
-  return tinbus_kReadNoData;
+  return TinDuino_kReadNoData;
 }

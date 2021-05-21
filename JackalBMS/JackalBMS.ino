@@ -90,15 +90,15 @@ void process(void) {
 
   int16_t chargeCentiAmps = bms.chargeMilliAmps / 10;
 
-  tinbus_frame_t txFrame;
+  tinframe_t txFrame;
   // always send battery voltage and current
   msg_pack(&txFrame, &vbat, cellSum);
   msg_pack(&txFrame, &ibat, chargeCentiAmps);
   msg_pack(&txFrame, &vtrg, 26700);
   msg_pack(&txFrame, &itrg, 2000);
-  txFrame.sequence = 0;
+  txFrame.data[MSG_SEQ] = 0;
   tinDuino.write(&txFrame);
-  frameSequence = txFrame.sequence;
+  frameSequence = txFrame.data[MSG_SEQ];
 }
 
 void setup() {
@@ -122,9 +122,9 @@ void setup() {
 
 void loop() {
   // update bus
-  if(tinDuino.update() == tinbus_kWriteComplete){
+  if(tinDuino.update() == TinDuino_kWriteComplete){
     // send other parameters when sequence number matches message ID
-    tinbus_frame_t txFrame;
+    tinframe_t txFrame;
     if((frameSequence & SCHEDMSK) == (cel1.msgID & SCHEDMSK)){
       msg_pack(&txFrame, &cel1, bms.cellVoltage[0]);
       msg_pack(&txFrame, &cel2, bms.cellVoltage[1]);

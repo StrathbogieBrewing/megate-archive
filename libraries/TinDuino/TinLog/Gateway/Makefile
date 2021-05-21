@@ -26,7 +26,6 @@ run:
 	nohup ./bin/tinlog /dev/ttyUSB0 </dev/null >/dev/null 2>&1 &
 
 TARGET	= pi@raspberrypi:software
-#TARGET	= pi@plw:software/monitor
 
 upload:
 	rsync -r ../../ $(TARGET)/Tinduino
