@@ -6,6 +6,8 @@
 #include "AceBus.h"
 #include "msg_solar.h"
 
+
+
 msg_pack_t vbat = BMS_VBAT;
 msg_pack_t ibat = BMS_IBAT;
 msg_pack_t vtrg = BMS_VTRG;
@@ -48,8 +50,11 @@ typedef struct {
 
 static bms_t bms;
 
+#define SEQUENCE (0)
+#define MESSAGE (1)
+
 void writeFrame(tinframe_t* frame){
-  frame->data[MSG_SEQ] = frameSequence;
+  frame->data[SEQUENCE] = frameSequence;
   aceBus.write(frame);
 }
 
@@ -93,13 +98,11 @@ void process(void) {
     digitalWrite(ledPin, LOW);
   }
 
-  int16_t chargeCentiAmps = bms.chargeMilliAmps / 10;
-
   tinframe_t txFrame;
-  msg_pack(&txFrame, &vbat, cellSum);  // send battery voltage and current
-  msg_pack(&txFrame, &ibat, chargeCentiAmps);
-  msg_pack(&txFrame, &vtrg, 26700);
-  msg_pack(&txFrame, &itrg, 2000);
+  msg_pack((msg_data_t *)&txFrame.data[MESSAGE], &vbat, cellSum);  // send battery voltage and current
+  msg_pack((msg_data_t *)&txFrame.data[MESSAGE], &ibat, (int16_t)(bms.chargeMilliAmps / 10));
+  msg_pack((msg_data_t *)&txFrame.data[MESSAGE], &vtrg, 26700);
+  msg_pack((msg_data_t *)&txFrame.data[MESSAGE], &itrg, 2000);
   writeFrame(&txFrame);
   heartBeat = true;
 }
@@ -121,7 +124,7 @@ void setup() {
   mcp2515.setNormalMode();
 }
 
-#define SCHEDMSK (0x0E)
+#define SCHEDMSK (0xFE)
 
 void loop() {
   // update bus
@@ -133,22 +136,22 @@ void loop() {
       heartBeat = false;
       tinframe_t txFrame;
       if((frameSequence & SCHEDMSK) == (cel1.msgID & SCHEDMSK)){
-        msg_pack(&txFrame, &cel1, bms.cellVoltage[0]);
-        msg_pack(&txFrame, &cel2, bms.cellVoltage[1]);
-        msg_pack(&txFrame, &cel3, bms.cellVoltage[2]);
-        msg_pack(&txFrame, &cel4, bms.cellVoltage[3]);
+        msg_pack((msg_data_t *)&txFrame.data[MESSAGE], &cel1, bms.cellVoltage[0]);
+        msg_pack((msg_data_t *)&txFrame.data[MESSAGE], &cel2, bms.cellVoltage[1]);
+        msg_pack((msg_data_t *)&txFrame.data[MESSAGE], &cel3, bms.cellVoltage[2]);
+        msg_pack((msg_data_t *)&txFrame.data[MESSAGE], &cel4, bms.cellVoltage[3]);
         writeFrame(&txFrame);
       } else if((frameSequence & SCHEDMSK) == (cel5.msgID & SCHEDMSK)){
-        msg_pack(&txFrame, &cel5, bms.cellVoltage[4]);
-        msg_pack(&txFrame, &cel6, bms.cellVoltage[5]);
-        msg_pack(&txFrame, &cel7, bms.cellVoltage[6]);
-        msg_pack(&txFrame, &cel8, bms.cellVoltage[7]);
+        msg_pack((msg_data_t *)&txFrame.data[MESSAGE], &cel5, bms.cellVoltage[4]);
+        msg_pack((msg_data_t *)&txFrame.data[MESSAGE], &cel6, bms.cellVoltage[5]);
+        msg_pack((msg_data_t *)&txFrame.data[MESSAGE], &cel7, bms.cellVoltage[6]);
+        msg_pack((msg_data_t *)&txFrame.data[MESSAGE], &cel8, bms.cellVoltage[7]);
         writeFrame(&txFrame);
       } else if((frameSequence & SCHEDMSK) == (vbal.msgID & SCHEDMSK)){
-        msg_pack(&txFrame, &vbal, bms.balanceVoltage);
-        msg_pack(&txFrame, &chah, bms.cellVoltage[1]);
-        msg_pack(&txFrame, &btc1, bms.temperature[0]);
-        msg_pack(&txFrame, &btc2, bms.temperature[1]);
+        msg_pack((msg_data_t *)&txFrame.data[MESSAGE], &vbal, bms.balanceVoltage);
+        msg_pack((msg_data_t *)&txFrame.data[MESSAGE], &chah, bms.cellVoltage[1]);
+        msg_pack((msg_data_t *)&txFrame.data[MESSAGE], &btc1, bms.temperature[0]);
+        msg_pack((msg_data_t *)&txFrame.data[MESSAGE], &btc2, bms.temperature[1]);
         writeFrame(&txFrame);
       }
     }
@@ -156,7 +159,7 @@ void loop() {
     tinframe_t rxFrame;
     int status = aceBus.read(&rxFrame);
     if(status == AceBus_kOK){
-      frameSequence = rxFrame.data[MSG_SEQ] + 1;
+      frameSequence = rxFrame.data[SEQUENCE] + 1;
     }
   }
 

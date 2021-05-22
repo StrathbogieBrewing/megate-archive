@@ -1,8 +1,6 @@
 #ifndef MSG_H
 #define MSG_H
 
-#include "tinframe.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -18,11 +16,10 @@ enum {
   MSG_BOOL,      // display as on / off
 };
 
-enum {
-  MSG_ID = 0,
-  MSG_SEQ,
-  MSG_DATA
-};
+typedef struct {
+  unsigned char msgID;
+  unsigned char data[];
+} msg_data_t;
 
 typedef struct {
   const unsigned char msgID;
@@ -36,9 +33,9 @@ typedef struct {
   const msg_pack_t pack;
 } msg_name_t;
 
-void msg_pack(tinframe_t *frame, msg_pack_t *pack, int value);
-int msg_unpack(tinframe_t *frame, const msg_pack_t *pack, int *value);
-int msg_format(tinframe_t *frame, const msg_pack_t *pack, char *str);
+void msg_pack(msg_data_t *data, msg_pack_t *pack, int value);
+int msg_unpack(msg_data_t *data, const msg_pack_t *pack, int *value);
+int msg_format(msg_data_t *data, const msg_pack_t *pack, char *str);
 
 #ifdef __cplusplus
 } // extern "C"

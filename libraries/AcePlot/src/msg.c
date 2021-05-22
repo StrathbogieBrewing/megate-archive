@@ -2,28 +2,28 @@
 
 #include "msg.h"
 
-void msg_pack(tinframe_t *frame, msg_pack_t *pack, int value) {
-  frame->data[MSG_ID] = pack->msgID;
+void msg_pack(msg_data_t *data, msg_pack_t *pack, int value) {
+  data->msgID = pack->msgID;
   unsigned char byteOffset = pack->bitOffset >> 3;
   if (pack->bitCount == 8) {
-    frame->data[MSG_DATA + byteOffset] = value;
+    data->data[byteOffset] = value;
   }
   if (pack->bitCount == 16) {
-    frame->data[MSG_DATA + byteOffset] = (value >> 8);
-    frame->data[MSG_DATA + byteOffset + 1] = value;
+    data->data[byteOffset] = (value >> 8);
+    data->data[byteOffset + 1] = value;
   }
 }
 
-int msg_unpack(tinframe_t *frame, const msg_pack_t *pack, int *value) {
-  if (frame->data[MSG_ID] != pack->msgID) {
+int msg_unpack(msg_data_t *data, const msg_pack_t *pack, int *value) {
+  if (data->msgID != pack->msgID) {
     return MSG_NULL;
   }
   unsigned char byteOffset = pack->bitOffset >> 3;
   if (pack->bitCount == 8) {
-    *value = (int)((signed char)frame->data[MSG_DATA + byteOffset]);
+    *value = (int)((signed char)data->data[byteOffset]);
   } else if (pack->bitCount == 16) {
-    *value = ((int)((signed char)frame->data[MSG_DATA + byteOffset]) << 8) +
-             frame->data[MSG_DATA + byteOffset + 1];
+    *value = ((int)((signed char)data->data[byteOffset]) << 8) +
+             data->data[byteOffset + 1];
   } else {
     return MSG_NULL;
   }
@@ -105,9 +105,9 @@ int _itoa(char *str, unsigned char format, int value) {
   return str - ptr;
 }
 
-int msg_format(tinframe_t *frame, const msg_pack_t *pack, char *str) {
+int msg_format(msg_data_t *data, const msg_pack_t *pack, char *str) {
   int value;
-  unsigned char format = msg_unpack(frame, pack, &value);
+  unsigned char format = msg_unpack(data, pack, &value);
   if (format == MSG_TIME) {
     int hours = 0;
     while (value >= 60) {

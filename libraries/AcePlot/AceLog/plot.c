@@ -7,8 +7,16 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#include "log.h"
+#include "plot.h"
 #include "mkdir.h"
+
+// maximum log record string
+#define kMaxStrLen (1024)
+
+// maximum log file buffer size
+#define kFileBufferSize (1048576)
+
+#define kMaxQueryCount (16)
 
 #include "msg_solar.h"
 msg_name_t msgNames[] = MSG_NAMES;
