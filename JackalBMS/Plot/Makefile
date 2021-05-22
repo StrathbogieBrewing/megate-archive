@@ -1,18 +1,18 @@
 CC         = gcc
 
-PROGRAM    = tinlog
+PROGRAM    = getlog
 
-BUILD       = $(shell date +'%y%m%d%H%M')
+BUILD      = $(shell date +'%y%m%d%H%M')
 
-CSRC       = tinlog.c tinframe.c tinux.c msg.c log.c mkdir.c
+CSRC       =  getlog.c msg.c log.c
 
 BUILDDIR   = bin
 SOURCEDIR  = src
 EXTDIR     = ext
 
 # include directories
-INCLUDE    = -I../src -I../../
-VPATH      = ../../ ../src ../../AcePlot/src
+INCLUDE    = -I../ -I../../libraries/AcePlot/AceLog -I../../libraries/AcePlot/AceLog -I../../liraries/AcePlot/src
+VPATH      = ../../libraries/AcePlot/AceLog ../../libraries/AcePlot/src
 
 CFLAGS     = -DBUILD="$(BUILD)" -DPROGRAM="$(PROGRAM)" $(INCLUDE) -g
 

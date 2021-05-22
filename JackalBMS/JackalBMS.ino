@@ -99,10 +99,11 @@ void process(void) {
   }
 
   tinframe_t txFrame;
-  msg_pack((msg_data_t *)&txFrame.data[MESSAGE], &vbat, cellSum);  // send battery voltage and current
-  msg_pack((msg_data_t *)&txFrame.data[MESSAGE], &ibat, (int16_t)(bms.chargeMilliAmps / 10));
-  msg_pack((msg_data_t *)&txFrame.data[MESSAGE], &vtrg, 26700);
-  msg_pack((msg_data_t *)&txFrame.data[MESSAGE], &itrg, 2000);
+  msg_data_t *msg = (msg_data_t *)&txFrame.data[MESSAGE];
+  msg_pack(msg, &vbat, cellSum);  // send battery voltage and current
+  msg_pack(msg, &ibat, (int16_t)(bms.chargeMilliAmps / 10));
+  msg_pack(msg, &vtrg, 26700);
+  msg_pack(msg, &itrg, 2000);
   writeFrame(&txFrame);
   heartBeat = true;
 }
@@ -135,23 +136,24 @@ void loop() {
     if(heartBeat){
       heartBeat = false;
       tinframe_t txFrame;
+      msg_data_t *msg = (msg_data_t *)&txFrame.data[MESSAGE];
       if((frameSequence & SCHEDMSK) == (cel1.msgID & SCHEDMSK)){
-        msg_pack((msg_data_t *)&txFrame.data[MESSAGE], &cel1, bms.cellVoltage[0]);
-        msg_pack((msg_data_t *)&txFrame.data[MESSAGE], &cel2, bms.cellVoltage[1]);
-        msg_pack((msg_data_t *)&txFrame.data[MESSAGE], &cel3, bms.cellVoltage[2]);
-        msg_pack((msg_data_t *)&txFrame.data[MESSAGE], &cel4, bms.cellVoltage[3]);
+        msg_pack(msg, &cel1, bms.cellVoltage[0]);
+        msg_pack(msg, &cel2, bms.cellVoltage[1]);
+        msg_pack(msg, &cel3, bms.cellVoltage[2]);
+        msg_pack(msg, &cel4, bms.cellVoltage[3]);
         writeFrame(&txFrame);
       } else if((frameSequence & SCHEDMSK) == (cel5.msgID & SCHEDMSK)){
-        msg_pack((msg_data_t *)&txFrame.data[MESSAGE], &cel5, bms.cellVoltage[4]);
-        msg_pack((msg_data_t *)&txFrame.data[MESSAGE], &cel6, bms.cellVoltage[5]);
-        msg_pack((msg_data_t *)&txFrame.data[MESSAGE], &cel7, bms.cellVoltage[6]);
-        msg_pack((msg_data_t *)&txFrame.data[MESSAGE], &cel8, bms.cellVoltage[7]);
+        msg_pack(msg, &cel5, bms.cellVoltage[4]);
+        msg_pack(msg, &cel6, bms.cellVoltage[5]);
+        msg_pack(msg, &cel7, bms.cellVoltage[6]);
+        msg_pack(msg, &cel8, bms.cellVoltage[7]);
         writeFrame(&txFrame);
       } else if((frameSequence & SCHEDMSK) == (vbal.msgID & SCHEDMSK)){
-        msg_pack((msg_data_t *)&txFrame.data[MESSAGE], &vbal, bms.balanceVoltage);
-        msg_pack((msg_data_t *)&txFrame.data[MESSAGE], &chah, bms.cellVoltage[1]);
-        msg_pack((msg_data_t *)&txFrame.data[MESSAGE], &btc1, bms.temperature[0]);
-        msg_pack((msg_data_t *)&txFrame.data[MESSAGE], &btc2, bms.temperature[1]);
+        msg_pack(msg, &vbal, bms.balanceVoltage);
+        msg_pack(msg, &chah, bms.cellVoltage[1]);
+        msg_pack(msg, &btc1, bms.temperature[0]);
+        msg_pack(msg, &btc2, bms.temperature[1]);
         writeFrame(&txFrame);
       }
     }

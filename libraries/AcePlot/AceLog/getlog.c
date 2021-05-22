@@ -8,8 +8,7 @@
 #include <sys/time.h>
 
 #include "log.h"
-#include "mkdir.h"
-#include "udp.h"
+
 
 // maximum log record string
 #define kMaxStrLen (1024)
@@ -177,7 +176,7 @@ int main(int argc, char *argv[]) {
     log_terminate();
     udp_close();
   }
-  
+
   return EXIT_SUCCESS;
 }
 
