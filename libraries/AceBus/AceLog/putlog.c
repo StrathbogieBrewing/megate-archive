@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
 
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -29,7 +30,9 @@ int main(int argc, char *argv[]) {
   if (tinux_open(argv[kSerialDevice]) == -1) {
     return EXIT_FAILURE;
   }
-  log_begin(argv[kLogPath]);
+  signal(SIGINT, intHandler);
+  signal(SIGTERM, intHandler);
+  log_begin(argv[kLogPath], sizeof(tinframe_t));
   unsigned char sequence = 0;
   while (keepRunning) {
     tinframe_t rxFrame;
@@ -53,7 +56,7 @@ int main(int argc, char *argv[]) {
   // teardown ports
   tinux_close();
   log_end();
-  fprintf(stdout, "Exit\n");
+  fprintf(stdout, "\nExit %s\n", argv[0]);
 
   return EXIT_SUCCESS;
 }

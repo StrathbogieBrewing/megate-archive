@@ -35,8 +35,8 @@ int tinux_open(char *port) {
   original_termios = termios;
 
   cfmakeraw(&termios);
-  termios.c_cc[VMIN] = 1;
-  termios.c_cc[VTIME] = 0;
+  termios.c_cc[VMIN] = 0;
+  termios.c_cc[VTIME] = 1;
 
   if (cfsetospeed(&termios, B1200) < 0) {
     fprintf(stderr, "TTY Device cfsetospeed() failed\n");
@@ -65,7 +65,12 @@ int tinux_read(tinframe_t *rxFrame) {
   }
   // read 2 frames into ring buffer
   while ((unsigned char)(rxHead - rxTail) < tinframe_kFrameSize * 2){
-    read(fd, &ringBuffer[rxHead++], 1);
+    int bytesRead = read(fd, &ringBuffer[rxHead], 1);
+    if(bytesRead != 0){
+      rxHead++;
+    } else {
+      return tinux_kReadNoData;
+    }
   }
   // look for a good frame
   while((unsigned char)(rxHead - rxTail) >= tinframe_kFrameSize){

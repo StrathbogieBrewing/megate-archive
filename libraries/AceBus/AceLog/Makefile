@@ -1,10 +1,10 @@
 CC         = gcc
 
-PROGRAM    = tinlog
+PROGRAM    = putlog
 
 BUILD       = $(shell date +'%y%m%d%H%M')
 
-CSRC       = tinlog.c tinframe.c tinux.c msg.c log.c mkdir.c
+CSRC       = putlog.c tinframe.c tinux.c msg.c log.c mkdir.c
 
 BUILDDIR   = bin
 SOURCEDIR  = src

@@ -4,10 +4,11 @@
 #include <stdbool.h>
 #include <time.h>
 
-#include "tinframe.h"
-
-void log_begin(const char *path);
-void log_commit(tinframe_t* frame);
+void log_begin(const char *logPath, int dataSize);
+void log_commit(void* data);
 void log_end(void);
+
+
+uint32_t log_read(uint32_t time, uint32_t day, void* data);
 
 #endif
