@@ -4,11 +4,17 @@
 #include <stdbool.h>
 #include <time.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void log_begin(const char *logPath, int dataSize);
 void log_commit(void* data);
+void log_read(struct timeval *tv, void* data);
 void log_end(void);
 
-
-uint32_t log_read(uint32_t time, uint32_t day, void* data);
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif
